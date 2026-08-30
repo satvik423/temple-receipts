@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -22,8 +22,16 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: settings.name,
     description: `Seva receipt counter for ${settings.name}`,
+    appleWebApp: {
+      title: settings.name,
+      statusBarStyle: "default",
+    },
   };
 }
+
+export const viewport: Viewport = {
+  themeColor: "#b54708",
+};
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
   const settings = await getOrCreateSettings();

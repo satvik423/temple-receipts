@@ -1,12 +1,15 @@
 import { Suspense } from "react";
 import { LoginForm } from "@/components/login-form";
+import { getOrCreateSettings } from "@/lib/settings";
 
 export const dynamic = "force-dynamic";
 
-export default function LoginPage() {
+export default async function LoginPage() {
+  const settings = await getOrCreateSettings();
+
   return (
     <Suspense>
-      <LoginForm />
+      <LoginForm templeName={settings.name} />
     </Suspense>
   );
 }

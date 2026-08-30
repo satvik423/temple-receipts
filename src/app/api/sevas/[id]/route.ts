@@ -42,3 +42,16 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
   return NextResponse.json(toSevaDTO(seva));
 }
+
+export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+
+  await connectToDatabase();
+  const seva = await SevaModel.findByIdAndDelete(id);
+
+  if (!seva) {
+    return NextResponse.json({ error: "Seva not found" }, { status: 404 });
+  }
+
+  return NextResponse.json({ ok: true });
+}

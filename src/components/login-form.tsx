@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-export function LoginForm() {
+export function LoginForm({ templeName }: { templeName: string }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [pin, setPin] = React.useState("");
@@ -45,7 +45,7 @@ export function LoginForm() {
     <div className="flex min-h-[70vh] items-center justify-center">
       <Card className="w-full max-w-sm">
         <CardHeader>
-          <CardTitle>Temple Receipts</CardTitle>
+          <CardTitle>{templeName}</CardTitle>
           <CardDescription>Enter the counter PIN to continue.</CardDescription>
         </CardHeader>
         <CardContent>

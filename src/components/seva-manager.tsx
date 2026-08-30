@@ -2,9 +2,19 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { Pencil, Plus } from "lucide-react";
+import { Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,7 +35,9 @@ export function SevaManager({ sevas }: { sevas: SevaDTO[] }) {
   const router = useRouter();
   const [createOpen, setCreateOpen] = React.useState(false);
   const [editingSeva, setEditingSeva] = React.useState<SevaDTO | null>(null);
+  const [deletingSeva, setDeletingSeva] = React.useState<SevaDTO | null>(null);
   const [togglingId, setTogglingId] = React.useState<string | null>(null);
+  const [deleting, setDeleting] = React.useState(false);
 
   async function toggleActive(seva: SevaDTO) {
     setTogglingId(seva.id);
@@ -45,6 +57,23 @@ export function SevaManager({ sevas }: { sevas: SevaDTO[] }) {
       router.refresh();
     } finally {
       setTogglingId(null);
+    }
+  }
+
+  async function handleDelete() {
+    if (!deletingSeva) return;
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/sevas/${deletingSeva.id}`, { method: "DELETE" });
+      if (!res.ok) {
+        toast.error("Could not delete seva");
+        return;
+      }
+      toast.success("Seva deleted");
+      setDeletingSeva(null);
+      router.refresh();
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -110,6 +139,15 @@ export function SevaManager({ sevas }: { sevas: SevaDTO[] }) {
                         >
                           <Pencil className="size-4" />
                         </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          aria-label={`Delete ${seva.name}`}
+                          className="text-muted-foreground hover:text-destructive"
+                          onClick={() => setDeletingSeva(seva)}
+                        >
+                          <Trash2 className="size-4" />
+                        </Button>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -131,6 +169,35 @@ export function SevaManager({ sevas }: { sevas: SevaDTO[] }) {
         onOpenChange={(open) => !open && setEditingSeva(null)}
         onSaved={() => router.refresh()}
       />
+
+      <AlertDialog
+        open={deletingSeva !== null}
+        onOpenChange={(open) => !open && setDeletingSeva(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete {deletingSeva?.name}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This can&apos;t be undone. Past receipts already keep their own copy of this
+              seva&apos;s name and price, so history stays intact — but it will be removed from
+              your seva list and the Sell page.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              disabled={deleting}
+              onClick={(e) => {
+                e.preventDefault();
+                handleDelete();
+              }}
+            >
+              {deleting ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

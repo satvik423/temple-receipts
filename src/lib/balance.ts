@@ -5,9 +5,6 @@ export type TodayBalance = {
   businessDate: string;
   openingBalance: number;
   salesTotal: number;
-  expectedClosing: number;
-  closingBalanceActual: number | null;
-  isClosed: boolean;
 };
 
 export async function getSalesTotal(businessDate: string): Promise<number> {
@@ -28,8 +25,5 @@ export async function getTodayBalance(businessDate: string): Promise<TodayBalanc
     businessDate,
     openingBalance: register.openingBalance,
     salesTotal,
-    expectedClosing: register.openingBalance + salesTotal,
-    closingBalanceActual: register.closingBalanceActual ?? null,
-    isClosed: register.closingBalanceActual != null,
   };
 }

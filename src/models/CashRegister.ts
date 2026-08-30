@@ -5,8 +5,6 @@ const CashRegisterSchema = new Schema(
     businessDate: { type: String, required: true, unique: true },
     openingBalance: { type: Number, required: true, min: 0 },
     openedAt: { type: Date, required: true, default: Date.now },
-    closingBalanceActual: { type: Number, min: 0 },
-    closedAt: { type: Date },
   },
   { timestamps: true },
 );

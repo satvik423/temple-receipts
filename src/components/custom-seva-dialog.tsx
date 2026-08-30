@@ -83,8 +83,9 @@ function CustomSevaForm({
           id="bhakta-phone"
           type="tel"
           inputMode="numeric"
+          maxLength={15}
           value={bhaktaPhone}
-          onChange={(e) => setBhaktaPhone(e.target.value)}
+          onChange={(e) => setBhaktaPhone(e.target.value.replace(/\D/g, ""))}
         />
       </div>
       <div className="space-y-2">

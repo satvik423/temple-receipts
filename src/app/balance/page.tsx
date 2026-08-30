@@ -18,19 +18,11 @@ export default async function BalancePage() {
   ]);
 
   const history: HistoryEntry[] = await Promise.all(
-    historyRegisters.map(async (register) => {
-      const salesTotal = await getSalesTotal(register.businessDate);
-      const expectedClosing = register.openingBalance + salesTotal;
-      const closingBalanceActual = register.closingBalanceActual ?? null;
-      return {
-        businessDate: register.businessDate,
-        openingBalance: register.openingBalance,
-        salesTotal,
-        expectedClosing,
-        closingBalanceActual,
-        variance: closingBalanceActual != null ? closingBalanceActual - expectedClosing : null,
-      };
-    }),
+    historyRegisters.map(async (register) => ({
+      businessDate: register.businessDate,
+      openingBalance: register.openingBalance,
+      salesTotal: await getSalesTotal(register.businessDate),
+    })),
   );
 
   return <BalanceView today={today} businessDate={businessDate} history={history} />;

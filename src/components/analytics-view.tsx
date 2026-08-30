@@ -3,7 +3,7 @@
 import * as React from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { Bar, BarChart, CartesianGrid, Cell, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,13 +15,7 @@ import {
   type ChartConfig,
 } from "@/components/ui/chart";
 import { formatCurrency } from "@/lib/format";
-import { formatBusinessDate } from "@/lib/date";
 import type { PeriodStat, RevenuePoint, RevenueRange, SevaBreakdownEntry } from "@/lib/analytics";
-
-export type BalanceVariancePoint = {
-  businessDate: string;
-  variance: number;
-};
 
 const RANGE_LABELS: Record<RevenueRange, string> = {
   daily: "Daily",
@@ -34,11 +28,6 @@ const revenueChartConfig = {
   total: { label: "Revenue", color: "var(--primary)" },
 } satisfies ChartConfig;
 
-const varianceChartConfig = {
-  positive: { label: "Matched / Over", color: "var(--chart-positive)" },
-  negative: { label: "Short", color: "var(--chart-negative)" },
-} satisfies ChartConfig;
-
 export function AnalyticsView({
   range,
   offset,
@@ -46,9 +35,6 @@ export function AnalyticsView({
   revenueSeries,
   sevaBreakdown,
   fixedVsCustom,
-  balanceHistory,
-  balanceOffset,
-  hasOlderBalanceHistory,
 }: {
   range: RevenueRange;
   offset: number;
@@ -56,9 +42,6 @@ export function AnalyticsView({
   revenueSeries: RevenuePoint[];
   sevaBreakdown: SevaBreakdownEntry[];
   fixedVsCustom: { fixed: number; custom: number };
-  balanceHistory: BalanceVariancePoint[];
-  balanceOffset: number;
-  hasOlderBalanceHistory: boolean;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -83,11 +66,6 @@ export function AnalyticsView({
   function stepOffset(delta: number) {
     const next = Math.max(0, offset + delta);
     updateParams({ offset: next > 0 ? String(next) : undefined });
-  }
-
-  function stepBalanceOffset(delta: number) {
-    const next = Math.max(0, balanceOffset + delta);
-    updateParams({ balanceOffset: next > 0 ? String(next) : undefined });
   }
 
   const maxSevaTotal = Math.max(1, ...sevaBreakdown.map((s) => s.total));
@@ -237,77 +215,6 @@ export function AnalyticsView({
           </CardContent>
         </Card>
       </div>
-
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-base">Cash Balance Variance</CardTitle>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="icon"
-              aria-label="Show older days"
-              disabled={!hasOlderBalanceHistory}
-              onClick={() => stepBalanceOffset(1)}
-            >
-              <ChevronLeft className="size-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              aria-label="Show newer days"
-              disabled={balanceOffset === 0}
-              onClick={() => stepBalanceOffset(-1)}
-            >
-              <ChevronRight className="size-4" />
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {balanceHistory.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              No closed days in this window — variance appears once a day&apos;s register is
-              closed.
-            </p>
-          ) : (
-            <ChartContainer config={varianceChartConfig} className="aspect-auto h-56 w-full">
-              <BarChart data={balanceHistory} margin={{ left: 0, right: 0 }}>
-                <CartesianGrid vertical={false} />
-                <XAxis
-                  dataKey="businessDate"
-                  tickFormatter={(value) => formatBusinessDate(value).slice(0, 5)}
-                  tickLine={false}
-                  axisLine={false}
-                  tickMargin={8}
-                />
-                <YAxis
-                  tickLine={false}
-                  axisLine={false}
-                  tickMargin={8}
-                  width={56}
-                  tickFormatter={(value) => formatCurrency(Number(value))}
-                />
-                <ChartTooltip
-                  cursor={false}
-                  content={
-                    <ChartTooltipContent
-                      labelFormatter={(value) => formatBusinessDate(String(value))}
-                      formatter={(value) => formatCurrency(Number(value))}
-                    />
-                  }
-                />
-                <Bar dataKey="variance" radius={4}>
-                  {balanceHistory.map((entry) => (
-                    <Cell
-                      key={entry.businessDate}
-                      fill={entry.variance >= 0 ? "var(--color-positive)" : "var(--color-negative)"}
-                    />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ChartContainer>
-          )}
-        </CardContent>
-      </Card>
     </div>
   );
 }

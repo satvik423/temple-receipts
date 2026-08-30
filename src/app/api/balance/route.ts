@@ -23,27 +23,3 @@ export async function POST(request: Request) {
   await CashRegisterModel.create({ businessDate, openingBalance, openedAt: new Date() });
   return NextResponse.json(await getTodayBalance(businessDate), { status: 201 });
 }
-
-export async function PATCH(request: Request) {
-  const body = await request.json().catch(() => null);
-  const closingBalanceActual = Number(body?.closingBalanceActual);
-
-  if (!Number.isFinite(closingBalanceActual) || closingBalanceActual < 0) {
-    return NextResponse.json({ error: "Enter a valid closing balance" }, { status: 400 });
-  }
-
-  await connectToDatabase();
-  const businessDate = getBusinessDate();
-
-  const register = await CashRegisterModel.findOneAndUpdate(
-    { businessDate },
-    { closingBalanceActual, closedAt: new Date() },
-    { returnDocument: "after" },
-  );
-
-  if (!register) {
-    return NextResponse.json({ error: "Open the day before closing it" }, { status: 400 });
-  }
-
-  return NextResponse.json(await getTodayBalance(businessDate));
-}

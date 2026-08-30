@@ -2,11 +2,12 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { Minus, Plus, Trash2 } from "lucide-react";
+import { Minus, Plus, Search, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { CustomSevaDialog, type CustomSevaSubmission } from "@/components/custom-seva-dialog";
 import { formatCurrency } from "@/lib/format";
 import type { SevaDTO } from "@/lib/dto";
@@ -28,6 +29,11 @@ export function SellCart({ sevas }: { sevas: SevaDTO[] }) {
   const [cart, setCart] = React.useState<CartLine[]>([]);
   const [customSeva, setCustomSeva] = React.useState<SevaDTO | null>(null);
   const [submitting, setSubmitting] = React.useState(false);
+  const [query, setQuery] = React.useState("");
+
+  const filteredSevas = query.trim()
+    ? sevas.filter((seva) => seva.name.toLowerCase().includes(query.trim().toLowerCase()))
+    : sevas;
 
   function addFixedSeva(seva: SevaDTO) {
     setCart((prev) => {
@@ -126,27 +132,55 @@ export function SellCart({ sevas }: { sevas: SevaDTO[] }) {
         <CardHeader>
           <CardTitle className="text-base">Sevas</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-3">
           {sevas.length === 0 ? (
             <p className="text-sm text-muted-foreground">
               No active sevas yet. Add some from the Sevas page.
             </p>
           ) : (
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
-              {sevas.map((seva) => (
-                <button
-                  key={seva.id}
-                  type="button"
-                  onClick={() => (seva.price === null ? setCustomSeva(seva) : addFixedSeva(seva))}
-                  className="flex flex-col items-start gap-1 rounded-lg border p-3 text-left transition-colors hover:bg-secondary/60"
-                >
-                  <span className="text-sm font-medium">{seva.name}</span>
-                  <span className="text-xs text-muted-foreground">
-                    {seva.price === null ? "Custom amount" : formatCurrency(seva.price)}
-                  </span>
-                </button>
-              ))}
-            </div>
+            <>
+              <div className="relative">
+                <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Search sevas..."
+                  className="pl-8"
+                />
+                {query ? (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    aria-label="Clear search"
+                    className="absolute top-1/2 right-1 size-6 -translate-y-1/2"
+                    onClick={() => setQuery("")}
+                  >
+                    <X className="size-3.5" />
+                  </Button>
+                ) : null}
+              </div>
+
+              {filteredSevas.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No sevas match &quot;{query}&quot;.</p>
+              ) : (
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
+                  {filteredSevas.map((seva) => (
+                    <button
+                      key={seva.id}
+                      type="button"
+                      onClick={() => (seva.price === null ? setCustomSeva(seva) : addFixedSeva(seva))}
+                      className="flex flex-col items-start gap-1 rounded-lg border p-3 text-left transition-colors hover:bg-secondary/60"
+                    >
+                      <span className="text-sm font-medium">{seva.name}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {seva.price === null ? "Custom amount" : formatCurrency(seva.price)}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </>
           )}
         </CardContent>
       </Card>
