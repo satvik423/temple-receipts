@@ -128,7 +128,7 @@ export function SellCart({ sevas }: { sevas: SevaDTO[] }) {
 
   return (
     <div className="grid gap-4 lg:grid-cols-[1fr_360px]">
-      <Card>
+      <Card className="order-2 lg:order-none">
         <CardHeader>
           <CardTitle className="text-base">Sevas</CardTitle>
         </CardHeader>
@@ -185,7 +185,7 @@ export function SellCart({ sevas }: { sevas: SevaDTO[] }) {
         </CardContent>
       </Card>
 
-      <Card className="h-fit lg:sticky lg:top-20">
+      <Card className="order-1 h-fit lg:order-none lg:sticky lg:top-20">
         <CardHeader>
           <CardTitle className="text-base">Cart</CardTitle>
         </CardHeader>
