@@ -1,0 +1,30 @@
+import { NextResponse } from "next/server";
+import { connectToDatabase } from "@/lib/mongodb";
+import { SettingsModel, SETTINGS_DOC_ID } from "@/models/Settings";
+
+export async function PATCH(request: Request) {
+  const body = await request.json().catch(() => null);
+  const name = typeof body?.name === "string" ? body.name.trim() : "";
+  const place = typeof body?.place === "string" ? body.place.trim() : "";
+  const phone = typeof body?.phone === "string" ? body.phone.trim() : "";
+
+  if (!name || !place || !phone) {
+    return NextResponse.json(
+      { error: "Temple name, place, and phone are all required" },
+      { status: 400 },
+    );
+  }
+
+  await connectToDatabase();
+  const settings = await SettingsModel.findByIdAndUpdate(
+    SETTINGS_DOC_ID,
+    { name, place, phone },
+    { returnDocument: "after", upsert: true },
+  );
+
+  return NextResponse.json({
+    name: settings.name,
+    place: settings.place,
+    phone: settings.phone,
+  });
+}

@@ -1,0 +1,107 @@
+import { NextResponse } from "next/server";
+import { connectToDatabase } from "@/lib/mongodb";
+import { SevaModel } from "@/models/Seva";
+import { ReceiptModel } from "@/models/Receipt";
+import { getNextSequence } from "@/models/Counter";
+import { getBusinessDate } from "@/lib/date";
+import { toReceiptDTO } from "@/lib/dto";
+
+type IncomingItem = {
+  sevaId?: string;
+  quantity?: number;
+  amount?: number;
+  bhaktaName?: string;
+  bhaktaPhone?: string;
+};
+
+export async function POST(request: Request) {
+  const body = await request.json().catch(() => null);
+  const incomingItems: IncomingItem[] = Array.isArray(body?.items) ? body.items : [];
+
+  if (incomingItems.length === 0) {
+    return NextResponse.json({ error: "Cart is empty" }, { status: 400 });
+  }
+
+  await connectToDatabase();
+
+  const items = [];
+  let total = 0;
+
+  for (const incoming of incomingItems) {
+    if (!incoming.sevaId) {
+      return NextResponse.json({ error: "Missing seva" }, { status: 400 });
+    }
+
+    const seva = await SevaModel.findById(incoming.sevaId);
+    if (!seva || !seva.active) {
+      return NextResponse.json(
+        { error: `${seva?.name ?? "A seva"} is no longer available` },
+        { status: 400 },
+      );
+    }
+
+    const isCustom = seva.price === null || seva.price === undefined;
+
+    if (isCustom) {
+      const amount = Number(incoming.amount);
+      const bhaktaName = incoming.bhaktaName?.trim();
+      const bhaktaPhone = incoming.bhaktaPhone?.trim();
+
+      if (!Number.isFinite(amount) || amount <= 0) {
+        return NextResponse.json(
+          { error: `Enter a valid amount for ${seva.name}` },
+          { status: 400 },
+        );
+      }
+      if (!bhaktaName || !bhaktaPhone) {
+        return NextResponse.json(
+          { error: `Name and phone are required for ${seva.name}` },
+          { status: 400 },
+        );
+      }
+
+      items.push({
+        sevaId: seva._id,
+        sevaName: seva.name,
+        quantity: 1,
+        unitPrice: amount,
+        amount,
+        isCustom: true,
+        bhaktaName,
+        bhaktaPhone,
+      });
+      total += amount;
+    } else {
+      const quantity = Number(incoming.quantity);
+      if (!Number.isInteger(quantity) || quantity < 1) {
+        return NextResponse.json(
+          { error: `Enter a valid quantity for ${seva.name}` },
+          { status: 400 },
+        );
+      }
+
+      const amount = seva.price! * quantity;
+      items.push({
+        sevaId: seva._id,
+        sevaName: seva.name,
+        quantity,
+        unitPrice: seva.price!,
+        amount,
+        isCustom: false,
+      });
+      total += amount;
+    }
+  }
+
+  const receiptNo = await getNextSequence("receiptNo");
+  const businessDate = getBusinessDate();
+
+  const receipt = await ReceiptModel.create({
+    receiptNo,
+    businessDate,
+    items,
+    total,
+  });
+
+  return NextResponse.json(toReceiptDTO(receipt), { status: 201 });
+}
