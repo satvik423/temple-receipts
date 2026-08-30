@@ -39,6 +39,32 @@ export function getRangeStartDate(range: RevenueRange, today: string): string {
   return addDays(today, -(RANGE_WINDOW_DAYS[range] - 1));
 }
 
+const RANGE_STEP_UNITS: Record<RevenueRange, number> = {
+  daily: 14,
+  weekly: 56,
+  monthly: 12,
+  yearly: 5,
+};
+
+export function getAnchorDate(range: RevenueRange, today: string, offset: number): string {
+  if (offset <= 0) return today;
+
+  if (range === "daily" || range === "weekly") {
+    return addDays(today, -RANGE_STEP_UNITS[range] * offset);
+  }
+
+  if (range === "monthly") {
+    const [year, month] = today.split("-").map(Number);
+    const monthIndex = year * 12 + (month - 1) - RANGE_STEP_UNITS.monthly * offset;
+    const newYear = Math.floor(monthIndex / 12);
+    const newMonth = (monthIndex % 12) + 1;
+    return `${newYear}-${String(newMonth).padStart(2, "0")}-01`;
+  }
+
+  const year = Number(today.slice(0, 4)) - RANGE_STEP_UNITS.yearly * offset;
+  return `${year}-01-01`;
+}
+
 async function getDailyTotals(
   startDate: string,
   endDate: string,

@@ -2,8 +2,10 @@
 
 import * as React from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, Cell, XAxis, YAxis } from "recharts";
 
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -39,31 +41,61 @@ const varianceChartConfig = {
 
 export function AnalyticsView({
   range,
+  offset,
   periodStats,
   revenueSeries,
   sevaBreakdown,
   fixedVsCustom,
   balanceHistory,
+  balanceOffset,
+  hasOlderBalanceHistory,
 }: {
   range: RevenueRange;
+  offset: number;
   periodStats: PeriodStat[];
   revenueSeries: RevenuePoint[];
   sevaBreakdown: SevaBreakdownEntry[];
   fixedVsCustom: { fixed: number; custom: number };
   balanceHistory: BalanceVariancePoint[];
+  balanceOffset: number;
+  hasOlderBalanceHistory: boolean;
 }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  function setRange(nextRange: string) {
+  function updateParams(next: Record<string, string | undefined>) {
     const params = new URLSearchParams(searchParams.toString());
-    params.set("range", nextRange);
+    for (const [key, value] of Object.entries(next)) {
+      if (value) {
+        params.set(key, value);
+      } else {
+        params.delete(key);
+      }
+    }
     router.push(`${pathname}?${params.toString()}`);
+  }
+
+  function setRange(nextRange: string) {
+    updateParams({ range: nextRange, offset: undefined });
+  }
+
+  function stepOffset(delta: number) {
+    const next = Math.max(0, offset + delta);
+    updateParams({ offset: next > 0 ? String(next) : undefined });
+  }
+
+  function stepBalanceOffset(delta: number) {
+    const next = Math.max(0, balanceOffset + delta);
+    updateParams({ balanceOffset: next > 0 ? String(next) : undefined });
   }
 
   const maxSevaTotal = Math.max(1, ...sevaBreakdown.map((s) => s.total));
   const fixedVsCustomTotal = fixedVsCustom.fixed + fixedVsCustom.custom;
+  const periodLabel =
+    revenueSeries.length > 0
+      ? `${revenueSeries[0].label} – ${revenueSeries[revenueSeries.length - 1].label}`
+      : null;
 
   return (
     <div className="space-y-4">
@@ -97,6 +129,28 @@ export function AnalyticsView({
           </Tabs>
         </CardHeader>
         <CardContent>
+          <div className="mb-3 flex items-center justify-between">
+            <span className="text-sm text-muted-foreground">{periodLabel}</span>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="icon"
+                aria-label="Show earlier period"
+                onClick={() => stepOffset(1)}
+              >
+                <ChevronLeft className="size-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                aria-label="Show later period"
+                disabled={offset === 0}
+                onClick={() => stepOffset(-1)}
+              >
+                <ChevronRight className="size-4" />
+              </Button>
+            </div>
+          </div>
           <ChartContainer config={revenueChartConfig} className="aspect-auto h-64 w-full">
             <BarChart data={revenueSeries} margin={{ left: 0, right: 0 }}>
               <CartesianGrid vertical={false} />
@@ -185,13 +239,34 @@ export function AnalyticsView({
       </div>
 
       <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Cash Balance Variance (last 14 closed days)</CardTitle>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle className="text-base">Cash Balance Variance</CardTitle>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="icon"
+              aria-label="Show older days"
+              disabled={!hasOlderBalanceHistory}
+              onClick={() => stepBalanceOffset(1)}
+            >
+              <ChevronLeft className="size-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              aria-label="Show newer days"
+              disabled={balanceOffset === 0}
+              onClick={() => stepBalanceOffset(-1)}
+            >
+              <ChevronRight className="size-4" />
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           {balanceHistory.length === 0 ? (
             <p className="text-sm text-muted-foreground">
-              No closed days yet — variance appears once a day&apos;s register is closed.
+              No closed days in this window — variance appears once a day&apos;s register is
+              closed.
             </p>
           ) : (
             <ChartContainer config={varianceChartConfig} className="aspect-auto h-56 w-full">

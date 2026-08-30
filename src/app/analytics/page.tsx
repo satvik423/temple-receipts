@@ -4,6 +4,7 @@ import { getSalesTotal } from "@/lib/balance";
 import { CashRegisterModel } from "@/models/CashRegister";
 import {
   REVENUE_RANGES,
+  getAnchorDate,
   getFixedVsCustomSplit,
   getPeriodStats,
   getRangeStartDate,
@@ -17,27 +18,40 @@ export const dynamic = "force-dynamic";
 
 const BALANCE_HISTORY_DAYS = 14;
 
+function parseOffset(value: string | undefined): number {
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : 0;
+}
+
 export default async function AnalyticsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ range?: string }>;
+  searchParams: Promise<{ range?: string; offset?: string; balanceOffset?: string }>;
 }) {
-  const { range: rangeParam } = await searchParams;
+  const { range: rangeParam, offset: offsetParam, balanceOffset: balanceOffsetParam } =
+    await searchParams;
   const range: RevenueRange = REVENUE_RANGES.includes(rangeParam as RevenueRange)
     ? (rangeParam as RevenueRange)
     : "daily";
+  const offset = parseOffset(offsetParam);
+  const balanceOffset = parseOffset(balanceOffsetParam);
 
   await connectToDatabase();
   const today = getBusinessDate();
-  const rangeStart = getRangeStartDate(range, today);
+  const anchor = getAnchorDate(range, today, offset);
+  const rangeStart = getRangeStartDate(range, anchor);
 
-  const [periodStats, revenueSeries, sevaBreakdown, fixedVsCustom, balanceRegisters] =
+  const [periodStats, revenueSeries, sevaBreakdown, fixedVsCustom, balanceRegisters, balanceTotalCount] =
     await Promise.all([
       getPeriodStats(today),
-      getRevenueSeries(range, today),
-      getSevaBreakdown(rangeStart, today),
-      getFixedVsCustomSplit(rangeStart, today),
-      CashRegisterModel.find().sort({ businessDate: -1 }).limit(BALANCE_HISTORY_DAYS),
+      getRevenueSeries(range, anchor),
+      getSevaBreakdown(rangeStart, anchor),
+      getFixedVsCustomSplit(rangeStart, anchor),
+      CashRegisterModel.find()
+        .sort({ businessDate: -1 })
+        .skip(balanceOffset * BALANCE_HISTORY_DAYS)
+        .limit(BALANCE_HISTORY_DAYS),
+      CashRegisterModel.countDocuments(),
     ]);
 
   const balanceHistory: BalanceVariancePoint[] = await Promise.all(
@@ -55,14 +69,20 @@ export default async function AnalyticsPage({
       }),
   );
 
+  const hasOlderBalanceHistory =
+    (balanceOffset + 1) * BALANCE_HISTORY_DAYS < balanceTotalCount;
+
   return (
     <AnalyticsView
       range={range}
+      offset={offset}
       periodStats={periodStats}
       revenueSeries={revenueSeries}
       sevaBreakdown={sevaBreakdown}
       fixedVsCustom={fixedVsCustom}
       balanceHistory={balanceHistory}
+      balanceOffset={balanceOffset}
+      hasOlderBalanceHistory={hasOlderBalanceHistory}
     />
   );
 }
