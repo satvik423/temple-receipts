@@ -16,6 +16,7 @@
 - "Save & Print" on the Sell page is now a true one-shot action: it saves the bill and prints it in place, without navigating to a separate `/print/[id]` page. You stay on the Sell page, ready for the next sale, with a "Print Again" button available if you need to reprint the last bill. The printable receipt markup was extracted into `ReceiptDocument` (`src/components/receipt-document.tsx`), shared by the Sell page, the History page's reprint action, and the standalone `/print/[receiptNo]` page.
 - On the Sell page, a seva's line amount now appears immediately to the left of its quantity stepper (in a fixed-width slot) instead of after it, so the +/- buttons no longer shift position as quantities change.
 - History's reprint action (the printer icon in the Action column) prints the bill in place too — no page navigation, no separate dialog — and stamps the reprint with a "*** COPY ***" badge (`ReceiptDocument`'s new `isCopy` prop) so a duplicate is never mistaken for the original.
+- Printed receipts are narrower (72mm → 70mm) with more, right-biased padding (`2mm 5mm 2mm 3mm`), since some thermal printers' printable area is narrower than the assumed 80mm paper width and were clipping the amount column on the right edge.
 
 ### Added
 - `PATCH /api/sevas/reorder` endpoint to persist a new seva display order.

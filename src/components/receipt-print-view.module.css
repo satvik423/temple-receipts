@@ -1,7 +1,7 @@
 .receipt {
-  width: 72mm;
+  width: 70mm;
   margin: 0 auto;
-  padding: 2mm 3mm;
+  padding: 2mm 5mm 2mm 3mm;
   font-family: "Courier New", Courier, monospace;
   font-size: 12px;
   font-weight: bold;
