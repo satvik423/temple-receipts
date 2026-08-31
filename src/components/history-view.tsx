@@ -3,6 +3,7 @@
 import * as React from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ChevronLeft, ChevronRight, Printer } from "lucide-react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,9 +17,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { HistoryReportDialog } from "@/components/history-report-dialog";
-import { ReceiptDocument } from "@/components/receipt-document";
 import { formatCurrency } from "@/lib/format";
 import { formatReceiptDate, formatReceiptTime, shiftBusinessDate } from "@/lib/date";
+import { PrinterNotConnectedError, printReceiptToUsb } from "@/lib/thermal-printer";
 import type { ReceiptDTO } from "@/lib/dto";
 
 export function HistoryView({
@@ -37,21 +38,22 @@ export function HistoryView({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [printReceipt, setPrintReceipt] = React.useState<ReceiptDTO | null>(null);
+  const [reprintingId, setReprintingId] = React.useState<string | null>(null);
 
-  React.useEffect(() => {
-    if (!printReceipt) return;
-    const timer = setTimeout(() => window.print(), 150);
-    return () => clearTimeout(timer);
-  }, [printReceipt]);
-
-  React.useEffect(() => {
-    function handleAfterPrint() {
-      setPrintReceipt(null);
+  async function handleReprint(receipt: ReceiptDTO) {
+    setReprintingId(receipt.id);
+    try {
+      await printReceiptToUsb(receipt, templeSettings, true);
+    } catch (err) {
+      if (err instanceof PrinterNotConnectedError) {
+        toast.error("No printer connected. Connect one in Settings.");
+      } else {
+        toast.error("Could not print. Check the printer connection.");
+      }
+    } finally {
+      setReprintingId(null);
     }
-    window.addEventListener("afterprint", handleAfterPrint);
-    return () => window.removeEventListener("afterprint", handleAfterPrint);
-  }, []);
+  }
 
   function setDate(nextDate: string) {
     const params = new URLSearchParams(searchParams.toString());
@@ -66,7 +68,7 @@ export function HistoryView({
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3 print:hidden">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-lg font-semibold">Sales History</h1>
         <div className="flex items-center gap-2">
           <HistoryReportDialog
@@ -86,7 +88,7 @@ export function HistoryView({
         </div>
       </div>
 
-      <Card className="print:hidden">
+      <Card>
         <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <CardTitle className="text-base">
             {receipts.length} {receipts.length === 1 ? "Receipt" : "Receipts"} ·{" "}
@@ -163,8 +165,9 @@ export function HistoryView({
                           <Button
                             variant="ghost"
                             size="icon"
+                            disabled={reprintingId === receipt.id}
                             aria-label={`Reprint bill ${receipt.receiptNo}`}
-                            onClick={() => setPrintReceipt(receipt)}
+                            onClick={() => handleReprint(receipt)}
                           >
                             <Printer className="size-4" />
                           </Button>
@@ -178,12 +181,6 @@ export function HistoryView({
           )}
         </CardContent>
       </Card>
-
-      {printReceipt ? (
-        <div className="hidden print:block">
-          <ReceiptDocument receipt={printReceipt} templeSettings={templeSettings} isCopy />
-        </div>
-      ) : null}
     </div>
   );
 }

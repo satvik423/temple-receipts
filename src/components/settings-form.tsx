@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { GbnSettingsForm } from "@/components/gbn-settings-form";
+import { PrinterConnectButton } from "@/components/printer-connect-button";
 
 type SettingsValues = {
   name: string;
@@ -115,6 +116,19 @@ export function SettingsForm({
       </div>
 
       <GbnSettingsForm currentGbn={currentGbn} />
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Receipt Printer</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          <PrinterConnectButton />
+          <p className="text-xs text-muted-foreground">
+            Connect your USB receipt printer once here. After that, Save &amp; Print and Reprint
+            will print straight to it, with no print preview screen.
+          </p>
+        </CardContent>
+      </Card>
     </div>
   );
 }
