@@ -5,6 +5,7 @@ const SevaSchema = new Schema(
     name: { type: String, required: true, trim: true },
     price: { type: Number, default: null, min: 0 },
     active: { type: Boolean, default: true },
+    order: { type: Number, default: 0 },
   },
   { timestamps: true },
 );

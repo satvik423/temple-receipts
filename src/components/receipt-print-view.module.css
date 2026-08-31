@@ -4,6 +4,7 @@
   padding: 2mm 3mm;
   font-family: "Courier New", Courier, monospace;
   font-size: 12px;
+  font-weight: bold;
   line-height: 1.5;
   color: #000;
   background: #fff;
@@ -52,6 +53,15 @@
 
 .tableHeader {
   font-weight: bold;
+}
+
+.copyBadge {
+  text-align: center;
+  font-size: 13px;
+  letter-spacing: 2px;
+  border: 1px dashed #000;
+  padding: 2px 0;
+  margin: 4px 0;
 }
 
 .attributions {

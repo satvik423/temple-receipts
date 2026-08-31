@@ -1,5 +1,20 @@
 const TEMPLE_TIME_ZONE = "Asia/Kolkata";
 
+export const MONTH_NAMES = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+] as const;
+
 export function getBusinessDate(date: Date = new Date()): string {
   return new Intl.DateTimeFormat("en-CA", {
     timeZone: TEMPLE_TIME_ZONE,
@@ -29,4 +44,11 @@ export function formatReceiptTime(date: Date): string {
 
 export function formatBusinessDate(businessDate: string): string {
   return formatReceiptDate(new Date(`${businessDate}T00:00:00+05:30`));
+}
+
+export function shiftBusinessDate(businessDate: string, days: number): string {
+  const [year, month, day] = businessDate.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
 }

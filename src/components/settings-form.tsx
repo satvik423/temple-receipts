@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { GbnSettingsForm } from "@/components/gbn-settings-form";
 
 type SettingsValues = {
   name: string;
@@ -15,7 +16,13 @@ type SettingsValues = {
   phone: string;
 };
 
-export function SettingsForm({ initialValues }: { initialValues: SettingsValues }) {
+export function SettingsForm({
+  initialValues,
+  currentGbn,
+}: {
+  initialValues: SettingsValues;
+  currentGbn: number;
+}) {
   const router = useRouter();
   const [name, setName] = React.useState(initialValues.name);
   const [place, setPlace] = React.useState(initialValues.place);
@@ -106,6 +113,8 @@ export function SettingsForm({ initialValues }: { initialValues: SettingsValues 
           </CardContent>
         </Card>
       </div>
+
+      <GbnSettingsForm currentGbn={currentGbn} />
     </div>
   );
 }

@@ -6,6 +6,7 @@ export type SevaDTO = {
   name: string;
   price: number | null;
   active: boolean;
+  order: number;
   createdAt: string;
 };
 
@@ -15,6 +16,7 @@ export function toSevaDTO(seva: Seva): SevaDTO {
     name: seva.name,
     price: seva.price ?? null,
     active: seva.active ?? true,
+    order: seva.order ?? 0,
     createdAt: seva.createdAt.toISOString(),
   };
 }
@@ -33,6 +35,7 @@ export type ReceiptItemDTO = {
 export type ReceiptDTO = {
   id: string;
   receiptNo: number;
+  dbn: number;
   businessDate: string;
   items: ReceiptItemDTO[];
   total: number;
@@ -43,6 +46,7 @@ export function toReceiptDTO(receipt: Receipt): ReceiptDTO {
   return {
     id: receipt._id.toString(),
     receiptNo: receipt.receiptNo,
+    dbn: receipt.dbn,
     businessDate: receipt.businessDate,
     items: receipt.items.map((item) => ({
       sevaId: item.sevaId.toString(),

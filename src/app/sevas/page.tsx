@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 
 export default async function SevasPage() {
   await connectToDatabase();
-  const sevas = await SevaModel.find().sort({ name: 1 });
+  const sevas = await SevaModel.find().sort({ order: 1, createdAt: 1 });
 
   return <SevaManager sevas={sevas.map(toSevaDTO)} />;
 }

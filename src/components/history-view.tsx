@@ -1,21 +1,12 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { ChevronLeft, ChevronRight, Printer, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Printer } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -24,133 +15,133 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { HistoryReportDialog } from "@/components/history-report-dialog";
+import { ReceiptDocument } from "@/components/receipt-document";
 import { formatCurrency } from "@/lib/format";
-import { formatReceiptDate, formatReceiptTime } from "@/lib/date";
-import type { ReceiptDTO, SevaDTO } from "@/lib/dto";
-
-type Filters = {
-  from: string;
-  to: string;
-  sevaId: string;
-};
+import { formatReceiptDate, formatReceiptTime, shiftBusinessDate } from "@/lib/date";
+import type { ReceiptDTO } from "@/lib/dto";
 
 export function HistoryView({
   receipts,
-  sevas,
-  totalCount,
   totalAmount,
-  page,
-  pageSize,
-  filters,
+  date,
+  today,
+  templeSettings,
 }: {
   receipts: ReceiptDTO[];
-  sevas: SevaDTO[];
-  totalCount: number;
   totalAmount: number;
-  page: number;
-  pageSize: number;
-  filters: Filters;
+  date: string;
+  today: string;
+  templeSettings: { name: string; place: string; phone: string };
 }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+  const [printReceipt, setPrintReceipt] = React.useState<ReceiptDTO | null>(null);
 
-  function updateParams(next: Partial<Filters & { page: string }>) {
+  React.useEffect(() => {
+    if (!printReceipt) return;
+    const timer = setTimeout(() => window.print(), 150);
+    return () => clearTimeout(timer);
+  }, [printReceipt]);
+
+  React.useEffect(() => {
+    function handleAfterPrint() {
+      setPrintReceipt(null);
+    }
+    window.addEventListener("afterprint", handleAfterPrint);
+    return () => window.removeEventListener("afterprint", handleAfterPrint);
+  }, []);
+
+  function setDate(nextDate: string) {
     const params = new URLSearchParams(searchParams.toString());
-    for (const [key, value] of Object.entries(next)) {
-      if (value) {
-        params.set(key, value);
-      } else {
-        params.delete(key);
-      }
+    if (nextDate && nextDate !== today) {
+      params.set("date", nextDate);
+    } else {
+      params.delete("date");
     }
-    if (!("page" in next)) {
-      params.delete("page");
-    }
-    router.push(`${pathname}?${params.toString()}`);
+    const query = params.toString();
+    router.push(query ? `${pathname}?${query}` : pathname);
   }
-
-  const hasFilters = filters.from || filters.to || filters.sevaId;
 
   return (
     <div className="space-y-4">
-      <h1 className="text-lg font-semibold">Sales History</h1>
+      <div className="flex flex-wrap items-center justify-between gap-3 print:hidden">
+        <h1 className="text-lg font-semibold">Sales History</h1>
+        <div className="flex items-center gap-2">
+          <HistoryReportDialog
+            today={today}
+            endpoint="/api/receipts/report/bill"
+            triggerLabel="Bill"
+            dialogTitle="Download Bill Report"
+            description="Includes every bill's line items, grouped by date."
+          />
+          <HistoryReportDialog
+            today={today}
+            endpoint="/api/receipts/report/summary"
+            triggerLabel="Report"
+            dialogTitle="Download Report"
+            description="Includes seva-wise totals per date, across all recorded sales."
+          />
+        </div>
+      </div>
 
-      <Card>
-        <CardContent className="flex flex-wrap items-end gap-3 pt-6">
-          <div className="space-y-1.5">
-            <Label htmlFor="from-date">From</Label>
-            <Input
-              id="from-date"
-              type="date"
-              value={filters.from}
-              onChange={(e) => updateParams({ from: e.target.value })}
-              className="w-[150px]"
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="to-date">To</Label>
-            <Input
-              id="to-date"
-              type="date"
-              value={filters.to}
-              onChange={(e) => updateParams({ to: e.target.value })}
-              className="w-[150px]"
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label>Seva</Label>
-            <Select
-              value={filters.sevaId || "all"}
-              onValueChange={(value) => updateParams({ sevaId: value === "all" ? "" : value })}
-            >
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="All Sevas" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Sevas</SelectItem>
-                {sevas.map((seva) => (
-                  <SelectItem key={seva.id} value={seva.id}>
-                    {seva.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          {hasFilters ? (
-            <Button
-              variant="ghost"
-              onClick={() => router.push(pathname)}
-              className="text-muted-foreground"
-            >
-              <X className="size-4" />
-              Clear
-            </Button>
-          ) : null}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
+      <Card className="print:hidden">
+        <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <CardTitle className="text-base">
-            {totalCount} {totalCount === 1 ? "Receipt" : "Receipts"} · {formatCurrency(totalAmount)}
+            {receipts.length} {receipts.length === 1 ? "Receipt" : "Receipts"} ·{" "}
+            {formatCurrency(totalAmount)}
           </CardTitle>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="icon"
+              aria-label="Previous day"
+              onClick={() => setDate(shiftBusinessDate(date, -1))}
+            >
+              <ChevronLeft className="size-4" />
+            </Button>
+            <Input
+              type="date"
+              value={date}
+              onChange={(e) => e.target.value && setDate(e.target.value)}
+              className="w-[160px]"
+            />
+            <Button
+              variant="outline"
+              size="icon"
+              aria-label="Next day"
+              disabled={date >= today}
+              onClick={() => setDate(shiftBusinessDate(date, 1))}
+            >
+              <ChevronRight className="size-4" />
+            </Button>
+            {date !== today ? (
+              <Button
+                variant="ghost"
+                className="text-muted-foreground"
+                onClick={() => setDate(today)}
+              >
+                Today
+              </Button>
+            ) : null}
+          </div>
         </CardHeader>
         <CardContent>
           {receipts.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No receipts match these filters.</p>
+            <p className="text-sm text-muted-foreground">No sales recorded for this date.</p>
           ) : (
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Receipt</TableHead>
+                    <TableHead>GBN</TableHead>
+                    <TableHead>DBN</TableHead>
                     <TableHead>Date</TableHead>
                     <TableHead>Time</TableHead>
                     <TableHead>Items</TableHead>
-                    <TableHead className="text-right">Total</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead className="text-right">Amount</TableHead>
+                    <TableHead className="text-right">Action</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -159,6 +150,7 @@ export function HistoryView({
                     return (
                       <TableRow key={receipt.id}>
                         <TableCell className="font-medium">#{receipt.receiptNo}</TableCell>
+                        <TableCell className="font-medium">#{receipt.dbn}</TableCell>
                         <TableCell>{formatReceiptDate(createdAt)}</TableCell>
                         <TableCell>{formatReceiptTime(createdAt)}</TableCell>
                         <TableCell className="max-w-[240px] truncate text-muted-foreground">
@@ -168,15 +160,13 @@ export function HistoryView({
                           {formatCurrency(receipt.total)}
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button variant="ghost" size="icon" asChild>
-                            <Link
-                              href={`/print/${receipt.receiptNo}`}
-                              target="_blank"
-                              rel="noopener"
-                              aria-label={`Reprint receipt ${receipt.receiptNo}`}
-                            >
-                              <Printer className="size-4" />
-                            </Link>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            aria-label={`Reprint bill ${receipt.receiptNo}`}
+                            onClick={() => setPrintReceipt(receipt)}
+                          >
+                            <Printer className="size-4" />
                           </Button>
                         </TableCell>
                       </TableRow>
@@ -186,34 +176,14 @@ export function HistoryView({
               </Table>
             </div>
           )}
-
-          {totalPages > 1 ? (
-            <div className="mt-4 flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">
-                Page {page} of {totalPages}
-              </span>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  disabled={page <= 1}
-                  onClick={() => updateParams({ page: String(page - 1) })}
-                >
-                  <ChevronLeft className="size-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  disabled={page >= totalPages}
-                  onClick={() => updateParams({ page: String(page + 1) })}
-                >
-                  <ChevronRight className="size-4" />
-                </Button>
-              </div>
-            </div>
-          ) : null}
         </CardContent>
       </Card>
+
+      {printReceipt ? (
+        <div className="hidden print:block">
+          <ReceiptDocument receipt={printReceipt} templeSettings={templeSettings} isCopy />
+        </div>
+      ) : null}
     </div>
   );
 }

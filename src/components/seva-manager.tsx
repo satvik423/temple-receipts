@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { GripVertical, Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -19,25 +19,98 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { SevaFormDialog } from "@/components/seva-form-dialog";
 import { formatCurrency } from "@/lib/format";
+import { cn } from "@/lib/utils";
 import type { SevaDTO } from "@/lib/dto";
 
-export function SevaManager({ sevas }: { sevas: SevaDTO[] }) {
+export function SevaManager({ sevas: initialSevas }: { sevas: SevaDTO[] }) {
   const router = useRouter();
+  const [sevas, setSevas] = React.useState(initialSevas);
+  const [syncedSevas, setSyncedSevas] = React.useState(initialSevas);
+  if (initialSevas !== syncedSevas) {
+    setSyncedSevas(initialSevas);
+    setSevas(initialSevas);
+  }
   const [createOpen, setCreateOpen] = React.useState(false);
   const [editingSeva, setEditingSeva] = React.useState<SevaDTO | null>(null);
   const [deletingSeva, setDeletingSeva] = React.useState<SevaDTO | null>(null);
   const [togglingId, setTogglingId] = React.useState<string | null>(null);
   const [deleting, setDeleting] = React.useState(false);
+  const [draggingId, setDraggingId] = React.useState<string | null>(null);
+
+  const rowRefs = React.useRef<Map<string, HTMLElement>>(new Map());
+
+  async function persistOrder(ordered: SevaDTO[]) {
+    const res = await fetch("/api/sevas/reorder", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ids: ordered.map((seva) => seva.id) }),
+    });
+    if (!res.ok) {
+      toast.error("Could not save the new order");
+      router.refresh();
+    }
+  }
+
+  function reorder(id: string, overId: string) {
+    if (id === overId) return;
+    setSevas((prev) => {
+      const fromIndex = prev.findIndex((seva) => seva.id === id);
+      const toIndex = prev.findIndex((seva) => seva.id === overId);
+      if (fromIndex === -1 || toIndex === -1) return prev;
+      const next = prev.slice();
+      const [moved] = next.splice(fromIndex, 1);
+      next.splice(toIndex, 0, moved);
+      return next;
+    });
+  }
+
+  function findRowIdAtPoint(clientY: number): string | null {
+    for (const [id, el] of rowRefs.current) {
+      const rect = el.getBoundingClientRect();
+      if (clientY >= rect.top && clientY <= rect.bottom) return id;
+    }
+    return null;
+  }
+
+  function handleDragHandlePointerDown(id: string, e: React.PointerEvent) {
+    if (e.button !== undefined && e.button !== 0) return;
+    e.preventDefault();
+    setDraggingId(id);
+
+    function onMove(ev: PointerEvent) {
+      const overId = findRowIdAtPoint(ev.clientY);
+      if (overId) reorder(id, overId);
+    }
+
+    function onUp() {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      setDraggingId(null);
+      setSevas((current) => {
+        persistOrder(current);
+        return current;
+      });
+    }
+
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+  }
+
+  function handleDragHandleKeyDown(id: string, e: React.KeyboardEvent) {
+    if (e.key !== "ArrowUp" && e.key !== "ArrowDown") return;
+    e.preventDefault();
+    const index = sevas.findIndex((seva) => seva.id === id);
+    const targetIndex = e.key === "ArrowUp" ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= sevas.length) return;
+    const overId = sevas[targetIndex].id;
+    reorder(id, overId);
+    setSevas((current) => {
+      persistOrder(current);
+      return current;
+    });
+  }
 
   async function toggleActive(seva: SevaDTO) {
     setTogglingId(seva.id);
@@ -97,62 +170,73 @@ export function SevaManager({ sevas }: { sevas: SevaDTO[] }) {
               No sevas yet. Add your first one to get started.
             </p>
           ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Price</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {sevas.map((seva) => (
-                    <TableRow key={seva.id}>
-                      <TableCell className="font-medium">{seva.name}</TableCell>
-                      <TableCell>
-                        {seva.price === null ? (
-                          <Badge variant="secondary">Custom</Badge>
-                        ) : (
-                          formatCurrency(seva.price)
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Switch
-                            checked={seva.active}
-                            disabled={togglingId === seva.id}
-                            onCheckedChange={() => toggleActive(seva)}
-                          />
-                          <span className="text-sm text-muted-foreground">
-                            {seva.active ? "Active" : "Inactive"}
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          aria-label={`Edit ${seva.name}`}
-                          onClick={() => setEditingSeva(seva)}
-                        >
-                          <Pencil className="size-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          aria-label={`Delete ${seva.name}`}
-                          className="text-muted-foreground hover:text-destructive"
-                          onClick={() => setDeletingSeva(seva)}
-                        >
-                          <Trash2 className="size-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+            <div className="divide-y rounded-md border">
+              {sevas.map((seva) => (
+                <div
+                  key={seva.id}
+                  ref={(el) => {
+                    if (el) rowRefs.current.set(seva.id, el);
+                    else rowRefs.current.delete(seva.id);
+                  }}
+                  className={cn(
+                    "flex flex-wrap items-center gap-x-3 gap-y-2 p-3",
+                    draggingId === seva.id && "bg-secondary/60",
+                  )}
+                >
+                  <button
+                    type="button"
+                    aria-label={`Reorder ${seva.name}`}
+                    className="shrink-0 touch-none text-muted-foreground hover:text-foreground"
+                    style={{ touchAction: "none" }}
+                    onPointerDown={(e) => handleDragHandlePointerDown(seva.id, e)}
+                    onKeyDown={(e) => handleDragHandleKeyDown(seva.id, e)}
+                  >
+                    <GripVertical className="size-4" />
+                  </button>
+
+                  <div className="min-w-0 flex-1 basis-40">
+                    <p className="truncate font-medium">{seva.name}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {seva.price === null ? (
+                        <Badge variant="secondary">Custom</Badge>
+                      ) : (
+                        formatCurrency(seva.price)
+                      )}
+                    </p>
+                  </div>
+
+                  <div className="flex shrink-0 items-center gap-2">
+                    <Switch
+                      checked={seva.active}
+                      disabled={togglingId === seva.id}
+                      onCheckedChange={() => toggleActive(seva)}
+                    />
+                    <span className="text-sm whitespace-nowrap text-muted-foreground">
+                      {seva.active ? "Active" : "Inactive"}
+                    </span>
+                  </div>
+
+                  <div className="ml-auto flex shrink-0 items-center">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      aria-label={`Edit ${seva.name}`}
+                      onClick={() => setEditingSeva(seva)}
+                    >
+                      <Pencil className="size-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      aria-label={`Delete ${seva.name}`}
+                      className="text-muted-foreground hover:text-destructive"
+                      onClick={() => setDeletingSeva(seva)}
+                    >
+                      <Trash2 className="size-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </CardContent>

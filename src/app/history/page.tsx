@@ -1,63 +1,40 @@
-import mongoose from "mongoose";
 import { connectToDatabase } from "@/lib/mongodb";
 import { ReceiptModel } from "@/models/Receipt";
-import { SevaModel } from "@/models/Seva";
-import { toReceiptDTO, toSevaDTO } from "@/lib/dto";
+import { toReceiptDTO } from "@/lib/dto";
+import { getBusinessDate } from "@/lib/date";
+import { getOrCreateSettings } from "@/lib/settings";
 import { HistoryView } from "@/components/history-view";
 
 export const dynamic = "force-dynamic";
 
-const PAGE_SIZE = 25;
+const BUSINESS_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
 export default async function HistoryPage({
   searchParams,
 }: {
-  searchParams: Promise<{ from?: string; to?: string; sevaId?: string; page?: string }>;
+  searchParams: Promise<{ date?: string }>;
 }) {
   const params = await searchParams;
+  const today = getBusinessDate();
+  const date = params.date && BUSINESS_DATE_PATTERN.test(params.date) ? params.date : today;
+
   await connectToDatabase();
 
-  const query: Record<string, unknown> = {};
+  const query = { businessDate: date };
 
-  if (params.from || params.to) {
-    const businessDate: Record<string, string> = {};
-    if (params.from) businessDate.$gte = params.from;
-    if (params.to) businessDate.$lte = params.to;
-    query.businessDate = businessDate;
-  }
-
-  if (params.sevaId && mongoose.isValidObjectId(params.sevaId)) {
-    query["items.sevaId"] = new mongoose.Types.ObjectId(params.sevaId);
-  }
-
-  const page = Math.max(1, Number(params.page) || 1);
-
-  const [receipts, totalCount, totalAmountResult, sevas] = await Promise.all([
-    ReceiptModel.find(query)
-      .sort({ receiptNo: -1 })
-      .skip((page - 1) * PAGE_SIZE)
-      .limit(PAGE_SIZE),
-    ReceiptModel.countDocuments(query),
-    ReceiptModel.aggregate([
-      { $match: query },
-      { $group: { _id: null, total: { $sum: "$total" } } },
-    ]),
-    SevaModel.find().sort({ name: 1 }),
+  const [receipts, totalAmountResult, settings] = await Promise.all([
+    ReceiptModel.find(query).sort({ receiptNo: -1 }),
+    ReceiptModel.aggregate([{ $match: query }, { $group: { _id: null, total: { $sum: "$total" } } }]),
+    getOrCreateSettings(),
   ]);
 
   return (
     <HistoryView
       receipts={receipts.map(toReceiptDTO)}
-      sevas={sevas.map(toSevaDTO)}
-      totalCount={totalCount}
       totalAmount={totalAmountResult[0]?.total ?? 0}
-      page={page}
-      pageSize={PAGE_SIZE}
-      filters={{
-        from: params.from ?? "",
-        to: params.to ?? "",
-        sevaId: params.sevaId ?? "",
-      }}
+      date={date}
+      today={today}
+      templeSettings={{ name: settings.name, place: settings.place, phone: settings.phone }}
     />
   );
 }

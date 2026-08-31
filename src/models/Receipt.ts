@@ -17,6 +17,7 @@ const ReceiptItemSchema = new Schema(
 const ReceiptSchema = new Schema(
   {
     receiptNo: { type: Number, required: true, unique: true },
+    dbn: { type: Number, required: true },
     businessDate: { type: String, required: true, index: true },
     items: { type: [ReceiptItemSchema], required: true },
     total: { type: Number, required: true, min: 0 },

@@ -1,10 +1,16 @@
 import { getOrCreateSettings } from "@/lib/settings";
+import { connectToDatabase } from "@/lib/mongodb";
+import { getSequenceValue } from "@/models/Counter";
 import { SettingsForm } from "@/components/settings-form";
 
 export const dynamic = "force-dynamic";
 
 export default async function SettingsPage() {
-  const settings = await getOrCreateSettings();
+  await connectToDatabase();
+  const [settings, currentGbn] = await Promise.all([
+    getOrCreateSettings(),
+    getSequenceValue("receiptNo"),
+  ]);
 
   return (
     <SettingsForm
@@ -13,6 +19,7 @@ export default async function SettingsPage() {
         place: settings.place,
         phone: settings.phone,
       }}
+      currentGbn={currentGbn}
     />
   );
 }

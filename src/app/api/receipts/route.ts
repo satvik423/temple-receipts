@@ -93,11 +93,15 @@ export async function POST(request: Request) {
     }
   }
 
-  const receiptNo = await getNextSequence("receiptNo");
   const businessDate = getBusinessDate();
+  const [receiptNo, dbn] = await Promise.all([
+    getNextSequence("receiptNo"),
+    getNextSequence(`dbn:${businessDate}`),
+  ]);
 
   const receipt = await ReceiptModel.create({
     receiptNo,
+    dbn,
     businessDate,
     items,
     total,

@@ -5,7 +5,7 @@ import { toSevaDTO } from "@/lib/dto";
 
 export async function GET() {
   await connectToDatabase();
-  const sevas = await SevaModel.find().sort({ createdAt: 1 });
+  const sevas = await SevaModel.find().sort({ order: 1, createdAt: 1 });
   return NextResponse.json(sevas.map(toSevaDTO));
 }
 
@@ -23,6 +23,8 @@ export async function POST(request: Request) {
   }
 
   await connectToDatabase();
-  const seva = await SevaModel.create({ name, price, active: true });
+  const lastSeva = await SevaModel.findOne().sort({ order: -1 });
+  const order = (lastSeva?.order ?? -1) + 1;
+  const seva = await SevaModel.create({ name, price, active: true, order });
   return NextResponse.json(toSevaDTO(seva), { status: 201 });
 }
