@@ -4,6 +4,7 @@ const ReceiptItemSchema = new Schema(
   {
     sevaId: { type: Schema.Types.ObjectId, ref: "Seva", required: true },
     sevaName: { type: String, required: true },
+    sevaNameEn: { type: String },
     quantity: { type: Number, required: true, min: 1 },
     unitPrice: { type: Number, required: true, min: 0 },
     amount: { type: Number, required: true, min: 0 },

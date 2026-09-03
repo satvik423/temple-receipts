@@ -57,6 +57,7 @@ function SevaForm({
 }) {
   const isEdit = Boolean(seva);
   const [name, setName] = React.useState(seva?.name ?? "");
+  const [nameEn, setNameEn] = React.useState(seva?.nameEn ?? "");
   const [isCustom, setIsCustom] = React.useState(seva ? seva.price === null : false);
   const [price, setPrice] = React.useState(seva?.price != null ? String(seva.price) : "");
   const [error, setError] = React.useState<string | null>(null);
@@ -68,7 +69,7 @@ function SevaForm({
     setSubmitting(true);
 
     try {
-      const payload = { name, isCustom, price: isCustom ? null : Number(price) };
+      const payload = { name, nameEn, isCustom, price: isCustom ? null : Number(price) };
       const url = isEdit ? `/api/sevas/${seva!.id}` : "/api/sevas";
       const method = isEdit ? "PATCH" : "POST";
 
@@ -99,6 +100,17 @@ function SevaForm({
       <div className="space-y-2">
         <Label htmlFor="seva-name">Name</Label>
         <Input id="seva-name" value={name} onChange={(e) => setName(e.target.value)} autoFocus />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="seva-name-en">
+          Name in English <span className="text-muted-foreground">(optional)</span>
+        </Label>
+        <Input
+          id="seva-name-en"
+          value={nameEn}
+          onChange={(e) => setNameEn(e.target.value)}
+        />
       </div>
 
       <div className="flex items-center justify-between rounded-md border p-3">

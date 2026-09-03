@@ -8,7 +8,6 @@ import {
   Settings,
   ShoppingCart,
   ScrollText,
-  Wallet,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -19,7 +18,6 @@ const NAV_ITEMS = [
   { href: "/sell", label: "Sell", icon: ShoppingCart },
   { href: "/sevas", label: "Sevas", icon: ScrollText },
   { href: "/history", label: "History", icon: History },
-  { href: "/balance", label: "Balance", icon: Wallet },
   { href: "/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/settings", label: "Settings", icon: Settings },
 ] as const;

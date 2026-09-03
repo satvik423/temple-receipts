@@ -63,6 +63,7 @@ export async function POST(request: Request) {
       items.push({
         sevaId: seva._id,
         sevaName: seva.name,
+        sevaNameEn: seva.nameEn ?? undefined,
         quantity: 1,
         unitPrice: amount,
         amount,
@@ -84,6 +85,7 @@ export async function POST(request: Request) {
       items.push({
         sevaId: seva._id,
         sevaName: seva.name,
+        sevaNameEn: seva.nameEn ?? undefined,
         quantity,
         unitPrice: seva.price!,
         amount,

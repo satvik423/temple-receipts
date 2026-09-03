@@ -4,6 +4,7 @@ import type { Receipt } from "@/models/Receipt";
 export type SevaDTO = {
   id: string;
   name: string;
+  nameEn: string | null;
   price: number | null;
   active: boolean;
   order: number;
@@ -14,6 +15,7 @@ export function toSevaDTO(seva: Seva): SevaDTO {
   return {
     id: seva._id.toString(),
     name: seva.name,
+    nameEn: seva.nameEn ?? null,
     price: seva.price ?? null,
     active: seva.active ?? true,
     order: seva.order ?? 0,
@@ -24,6 +26,7 @@ export function toSevaDTO(seva: Seva): SevaDTO {
 export type ReceiptItemDTO = {
   sevaId: string;
   sevaName: string;
+  sevaNameEn?: string;
   quantity: number;
   unitPrice: number;
   amount: number;
@@ -31,6 +34,14 @@ export type ReceiptItemDTO = {
   bhaktaName?: string;
   bhaktaPhone?: string;
 };
+
+export function displaySevaName(item: {
+  sevaName: string;
+  sevaNameEn?: string | null;
+}): string {
+  const en = item.sevaNameEn?.trim();
+  return en && en.length > 0 ? en : item.sevaName;
+}
 
 export type ReceiptDTO = {
   id: string;
@@ -51,6 +62,7 @@ export function toReceiptDTO(receipt: Receipt): ReceiptDTO {
     items: receipt.items.map((item) => ({
       sevaId: item.sevaId.toString(),
       sevaName: item.sevaName,
+      sevaNameEn: item.sevaNameEn ?? undefined,
       quantity: item.quantity,
       unitPrice: item.unitPrice,
       amount: item.amount,

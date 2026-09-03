@@ -2,6 +2,7 @@ import { connectToDatabase } from "@/lib/mongodb";
 import { ReceiptModel } from "@/models/Receipt";
 import { getOrCreateSettings } from "@/lib/settings";
 import { formatBusinessDate } from "@/lib/date";
+import { displaySevaName } from "@/lib/dto";
 import {
   buildReportDocument,
   escapeHtml,
@@ -12,7 +13,7 @@ import {
   resolveReportPeriod,
 } from "@/lib/pdf-report";
 
-type SevaTotal = { name: string; qty: number; amount: number };
+type SevaTotal = { sevaName: string; sevaNameEn: string | null; qty: number; amount: number };
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -43,18 +44,26 @@ export async function GET(request: Request) {
     const sevaTotals = new Map<string, SevaTotal>();
     for (const receipt of group) {
       for (const item of receipt.items) {
-        const key = item.sevaId.toString();
+        const enKey = (item.sevaNameEn ?? "").trim();
+        const key = `${item.sevaId.toString()}::${enKey}`;
         const existing = sevaTotals.get(key);
         if (existing) {
           existing.qty += item.quantity;
           existing.amount += item.amount;
         } else {
-          sevaTotals.set(key, { name: item.sevaName, qty: item.quantity, amount: item.amount });
+          sevaTotals.set(key, {
+            sevaName: item.sevaName,
+            sevaNameEn: enKey.length > 0 ? enKey : null,
+            qty: item.quantity,
+            amount: item.amount,
+          });
         }
       }
     }
 
-    const sortedSevas = [...sevaTotals.values()].sort((a, b) => a.name.localeCompare(b.name));
+    const sortedSevas = [...sevaTotals.values()].sort((a, b) =>
+      displaySevaName(a).localeCompare(displaySevaName(b)),
+    );
 
     rowsHtml += `<tr class="group-header">
       <td>${escapeHtml(`${formatBusinessDate(businessDate)}   R.No ${startGbn} - ${endGbn}`)}</td>
@@ -64,7 +73,7 @@ export async function GET(request: Request) {
 
     for (const seva of sortedSevas) {
       rowsHtml += `<tr>
-        <td>${escapeHtml(seva.name)}</td>
+        <td>${escapeHtml(displaySevaName(seva))}</td>
         <td class="qty">${seva.qty}</td>
         <td class="amount">${formatReportAmount(seva.amount)}</td>
       </tr>`;

@@ -2,6 +2,7 @@ import { connectToDatabase } from "@/lib/mongodb";
 import { ReceiptModel } from "@/models/Receipt";
 import { getOrCreateSettings } from "@/lib/settings";
 import { formatBusinessDate } from "@/lib/date";
+import { displaySevaName } from "@/lib/dto";
 import {
   buildReportDocument,
   escapeHtml,
@@ -51,7 +52,7 @@ export async function GET(request: Request) {
         rowsHtml += `<tr>
           <td>${receipt.receiptNo}</td>
           <td>${receipt.dbn}</td>
-          <td>${escapeHtml(item.sevaName)}</td>
+          <td>${escapeHtml(displaySevaName(item))}</td>
           <td class="qty">${item.quantity}</td>
           <td class="amount">${formatReportAmount(item.amount)}</td>
         </tr>`;

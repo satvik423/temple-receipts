@@ -20,6 +20,7 @@ import { ReceiptDocument } from "@/components/receipt-document";
 import { formatCurrency } from "@/lib/format";
 import { formatReceiptDate, formatReceiptTime, shiftBusinessDate } from "@/lib/date";
 import type { ReceiptDTO } from "@/lib/dto";
+import { displaySevaName } from "@/lib/dto";
 
 export function HistoryView({
   receipts,
@@ -154,7 +155,7 @@ export function HistoryView({
                         <TableCell>{formatReceiptDate(createdAt)}</TableCell>
                         <TableCell>{formatReceiptTime(createdAt)}</TableCell>
                         <TableCell className="max-w-[240px] truncate text-muted-foreground">
-                          {receipt.items.map((item) => item.sevaName).join(", ")}
+                          {receipt.items.map((item) => displaySevaName(item)).join(", ")}
                         </TableCell>
                         <TableCell className="text-right font-medium">
                           {formatCurrency(receipt.total)}
