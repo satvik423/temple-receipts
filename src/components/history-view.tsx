@@ -72,17 +72,13 @@ export function HistoryView({
         <div className="flex items-center gap-2">
           <HistoryReportDialog
             today={today}
-            endpoint="/api/receipts/report/bill"
-            triggerLabel="Bill"
-            dialogTitle="Download Bill Report"
-            description="Includes every bill's line items, grouped by date."
+            format="pdf"
+            triggerLabel="PDF"
           />
           <HistoryReportDialog
             today={today}
-            endpoint="/api/receipts/report/summary"
-            triggerLabel="Report"
-            dialogTitle="Download Report"
-            description="Includes seva-wise totals per date, across all recorded sales."
+            format="xlsx"
+            triggerLabel="Excel"
           />
         </div>
       </div>

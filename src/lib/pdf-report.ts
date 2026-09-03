@@ -2,8 +2,8 @@ import fs from "fs";
 import path from "path";
 import puppeteer from "puppeteer";
 
-import { MONTH_NAMES } from "@/lib/date";
-import type { Receipt } from "@/models/Receipt";
+export { resolveReportPeriod, groupReceiptsByDate } from "@/lib/report-period";
+export type { ReportPeriod } from "@/lib/report-period";
 
 const FONTS_DIR = path.join(process.cwd(), "src/lib/fonts");
 const FONT_REGULAR_BASE64 = fs
@@ -15,54 +15,6 @@ const FONT_BOLD_BASE64 = fs
 
 export function formatReportAmount(amount: number): string {
   return `Rs. ${amount.toLocaleString("en-IN")}`;
-}
-
-function daysInMonth(year: number, month: number): number {
-  return new Date(Date.UTC(year, month, 0)).getUTCDate();
-}
-
-export type ReportPeriod = {
-  query: Record<string, unknown>;
-  title: string;
-  filenameSuffix: string;
-};
-
-export function resolveReportPeriod(
-  searchParams: URLSearchParams,
-): ReportPeriod | { error: string } {
-  const type = searchParams.get("type") === "full" ? "full" : "month";
-
-  const now = new Date();
-  const year = Number(searchParams.get("year")) || now.getUTCFullYear();
-  const month = Number(searchParams.get("month")) || now.getUTCMonth() + 1;
-
-  if (!Number.isInteger(year) || month < 1 || month > 12) {
-    return { error: "Invalid year or month" };
-  }
-
-  if (type === "full") {
-    return { query: {}, title: "Full Report", filenameSuffix: "full" };
-  }
-
-  const mm = String(month).padStart(2, "0");
-  const from = `${year}-${mm}-01`;
-  const to = `${year}-${mm}-${String(daysInMonth(year, month)).padStart(2, "0")}`;
-
-  return {
-    query: { businessDate: { $gte: from, $lte: to } },
-    title: `${MONTH_NAMES[month - 1]} month - ${year}`,
-    filenameSuffix: `${year}-${mm}`,
-  };
-}
-
-export function groupReceiptsByDate(receipts: Receipt[]): Map<string, Receipt[]> {
-  const groups = new Map<string, Receipt[]>();
-  for (const receipt of receipts) {
-    const list = groups.get(receipt.businessDate) ?? [];
-    list.push(receipt);
-    groups.set(receipt.businessDate, list);
-  }
-  return groups;
 }
 
 export function escapeHtml(value: string): string {

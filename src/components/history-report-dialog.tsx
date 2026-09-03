@@ -12,6 +12,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -21,42 +22,60 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MONTH_NAMES } from "@/lib/date";
+import { MONTH_NAMES, shiftBusinessDate } from "@/lib/date";
 
 const YEAR_OPTIONS_COUNT = 6;
+const BASE_ENDPOINT = "/api/receipts/report";
+const DEFAULT_RANGE_DAYS = 30;
+
+export type ReportFormat = "pdf" | "xlsx";
 
 export function HistoryReportDialog({
   today,
-  endpoint,
+  format,
   triggerLabel,
-  dialogTitle,
-  description,
 }: {
   today: string;
-  endpoint: string;
+  format: ReportFormat;
   triggerLabel: string;
-  dialogTitle: string;
-  description: string;
 }) {
   const currentYear = Number(today.slice(0, 4));
   const currentMonth = Number(today.slice(5, 7));
 
   const [open, setOpen] = React.useState(false);
-  const [type, setType] = React.useState<"month" | "full">("month");
+  const [reportType, setReportType] = React.useState<"bill" | "summary">("bill");
+  const [type, setType] = React.useState<"month" | "range">("month");
   const [year, setYear] = React.useState(String(currentYear));
   const [month, setMonth] = React.useState(String(currentMonth));
+  const [from, setFrom] = React.useState(shiftBusinessDate(today, -(DEFAULT_RANGE_DAYS - 1)));
+  const [to, setTo] = React.useState(today);
 
   const years = Array.from({ length: YEAR_OPTIONS_COUNT }, (_, i) => String(currentYear - i));
 
+  const rangeError =
+    from === "" || to === ""
+      ? "Pick both dates"
+      : from > to
+        ? "'From' must be on or before 'To'"
+        : null;
+
   function handleDownload() {
+    if (type === "range" && rangeError !== null) return;
     const params = new URLSearchParams({ type });
     if (type === "month") {
       params.set("year", year);
       params.set("month", month);
+    } else {
+      params.set("from", from);
+      params.set("to", to);
     }
+    const endpoint = `${BASE_ENDPOINT}/${reportType}${format === "xlsx" ? "/xlsx" : ""}`;
     window.open(`${endpoint}?${params.toString()}`, "_blank");
     setOpen(false);
   }
+
+  const formatLabel = format === "xlsx" ? "Excel" : "PDF";
+  const downloadDisabled = type === "range" && rangeError !== null;
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -68,13 +87,23 @@ export function HistoryReportDialog({
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{dialogTitle}</DialogTitle>
+          <DialogTitle>Download as {formatLabel}</DialogTitle>
         </DialogHeader>
 
-        <Tabs value={type} onValueChange={(value) => setType(value as "month" | "full")}>
+        <Tabs
+          value={reportType}
+          onValueChange={(value) => setReportType(value as "bill" | "summary")}
+        >
+          <TabsList>
+            <TabsTrigger value="bill">Bill</TabsTrigger>
+            <TabsTrigger value="summary">Report</TabsTrigger>
+          </TabsList>
+        </Tabs>
+
+        <Tabs value={type} onValueChange={(value) => setType(value as "month" | "range")}>
           <TabsList>
             <TabsTrigger value="month">Month Report</TabsTrigger>
-            <TabsTrigger value="full">Full Report</TabsTrigger>
+            <TabsTrigger value="range">Custom Range</TabsTrigger>
           </TabsList>
         </Tabs>
 
@@ -112,11 +141,38 @@ export function HistoryReportDialog({
             </div>
           </div>
         ) : (
-          <p className="text-sm text-muted-foreground">{description}</p>
+          <div className="space-y-1.5">
+            <div className="flex gap-3">
+              <div className="flex-1 space-y-1.5">
+                <Label htmlFor="report-from">From</Label>
+                <Input
+                  id="report-from"
+                  type="date"
+                  value={from}
+                  max={to || today}
+                  onChange={(e) => setFrom(e.target.value)}
+                />
+              </div>
+              <div className="flex-1 space-y-1.5">
+                <Label htmlFor="report-to">To</Label>
+                <Input
+                  id="report-to"
+                  type="date"
+                  value={to}
+                  min={from}
+                  max={today}
+                  onChange={(e) => setTo(e.target.value)}
+                />
+              </div>
+            </div>
+            {rangeError ? (
+              <p className="text-xs text-destructive">{rangeError}</p>
+            ) : null}
+          </div>
         )}
 
         <DialogFooter>
-          <Button onClick={handleDownload}>
+          <Button onClick={handleDownload} disabled={downloadDisabled}>
             <Download className="size-4" />
             Download
           </Button>
