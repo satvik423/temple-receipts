@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Minus, Plus, Printer, Search, X } from "lucide-react";
+import { Minus, Plus, Printer, Search, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -156,8 +156,157 @@ export function SellCart({
   }
 
   return (
-    <div className="space-y-4 pb-24">
-      <Card className="print:hidden">
+    <div className="space-y-4 pb-24 lg:pb-0">
+      <div className="lg:grid lg:grid-cols-[1fr_360px] lg:gap-4">
+        <Card className="hidden print:hidden lg:block">
+          <CardHeader>
+            <CardTitle className="text-base">Sevas</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {sevas.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                No active sevas yet. Add some from the Sevas page.
+              </p>
+            ) : (
+              <>
+                <div className="relative">
+                  <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    placeholder="Search sevas..."
+                    className="pl-8"
+                  />
+                  {query ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      aria-label="Clear search"
+                      className="absolute top-1/2 right-1 size-6 -translate-y-1/2"
+                      onClick={() => setQuery("")}
+                    >
+                      <X className="size-3.5" />
+                    </Button>
+                  ) : null}
+                </div>
+
+                {filteredSevas.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No sevas match &quot;{query}&quot;.</p>
+                ) : (
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
+                    {filteredSevas.map((seva) => (
+                      <button
+                        key={seva.id}
+                        type="button"
+                        onClick={() =>
+                          seva.price === null ? setCustomSeva(seva) : addFixedSeva(seva)
+                        }
+                        className="flex flex-col items-start gap-1 rounded-lg border p-3 text-left transition-colors hover:bg-secondary/60"
+                      >
+                        <span className="text-sm font-medium">{seva.name}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {seva.price === null ? "Custom amount" : formatCurrency(seva.price)}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="hidden lg:sticky lg:top-20 lg:self-start lg:block">
+          <CardHeader>
+            <CardTitle className="text-base">Cart</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {cart.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No items yet. Tap a seva to add it.</p>
+            ) : (
+              <div className="space-y-3">
+                {cart.map((line) => (
+                  <div key={line.key} className="flex items-start justify-between gap-2 text-sm">
+                    <div className="min-w-0">
+                      <p className="truncate font-medium">{line.sevaName}</p>
+                      {line.isCustom ? (
+                        <p className="truncate text-xs text-muted-foreground">
+                          {line.bhaktaName}
+                          {line.bhaktaPhone ? ` · ${line.bhaktaPhone}` : null}
+                        </p>
+                      ) : (
+                        <div className="mt-1 flex items-center gap-1.5">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            className="size-6"
+                            onClick={() => updateQuantity(line.key, -1)}
+                          >
+                            <Minus className="size-3" />
+                          </Button>
+                          <span className="w-5 text-center text-xs">{line.quantity}</span>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            className="size-6"
+                            onClick={() => updateQuantity(line.key, 1)}
+                          >
+                            <Plus className="size-3" />
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <span className="font-medium">{formatCurrency(line.amount)}</span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="size-6 text-muted-foreground hover:text-destructive"
+                        aria-label={`Remove ${line.sevaName}`}
+                        onClick={() => removeLine(line.key)}
+                      >
+                        <Trash2 className="size-3.5" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+
+                <div className="flex items-center justify-between border-t pt-3 text-base font-semibold">
+                  <span>Total</span>
+                  <span>{formatCurrency(total)}</span>
+                </div>
+              </div>
+            )}
+
+            {printReceipt ? (
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                aria-label={`Print bill ${printReceipt.receiptNo} again`}
+                onClick={() => window.print()}
+              >
+                <Printer className="size-4" />
+                Print Again
+              </Button>
+            ) : null}
+
+            <Button
+              className="w-full"
+              disabled={cart.length === 0 || submitting}
+              onClick={handleCheckout}
+            >
+              {submitting ? "Saving..." : "Save & Print"}
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card className="print:hidden lg:hidden">
         <CardHeader>
           <CardTitle className="text-base">Sell</CardTitle>
         </CardHeader>
@@ -259,7 +408,8 @@ export function SellCart({
                                 className="flex items-center justify-between gap-2 text-sm"
                               >
                                 <span className="min-w-0 truncate text-muted-foreground">
-                                  {entry.bhaktaName} · {entry.bhaktaPhone}
+                                  {entry.bhaktaName}
+                                  {entry.bhaktaPhone ? ` · ${entry.bhaktaPhone}` : null}
                                 </span>
                                 <div className="flex shrink-0 items-center gap-2">
                                   <span className="font-medium">{formatCurrency(entry.amount)}</span>
@@ -288,7 +438,7 @@ export function SellCart({
         </CardContent>
       </Card>
 
-      <div className="fixed inset-x-0 bottom-0 z-10 border-t bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60 print:hidden">
+      <div className="fixed inset-x-0 bottom-0 z-10 border-t bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60 print:hidden lg:hidden">
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-3 py-3 sm:px-6">
           <div>
             <p className="text-xs text-muted-foreground">Total</p>

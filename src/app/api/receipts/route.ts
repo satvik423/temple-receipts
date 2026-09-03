@@ -53,9 +53,9 @@ export async function POST(request: Request) {
           { status: 400 },
         );
       }
-      if (!bhaktaName || !bhaktaPhone) {
+      if (!bhaktaName) {
         return NextResponse.json(
-          { error: `Name and phone are required for ${seva.name}` },
+          { error: `Name is required for ${seva.name}` },
           { status: 400 },
         );
       }
