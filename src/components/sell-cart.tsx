@@ -8,13 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { CustomSevaDialog, type CustomSevaSubmission } from "@/components/custom-seva-dialog";
-import { PrinterConnectButton } from "@/components/printer-connect-button";
+import { ReceiptDocument } from "@/components/receipt-document";
 import { formatCurrency } from "@/lib/format";
-import {
-  PrinterNotConnectedError,
-  getAuthorizedPrinter,
-  printReceiptToUsb,
-} from "@/lib/thermal-printer";
 import type { ReceiptDTO, SevaDTO } from "@/lib/dto";
 
 type CartLine = {
@@ -40,12 +35,20 @@ export function SellCart({
   const [customSeva, setCustomSeva] = React.useState<SevaDTO | null>(null);
   const [submitting, setSubmitting] = React.useState(false);
   const [query, setQuery] = React.useState("");
-  const [lastReceipt, setLastReceipt] = React.useState<ReceiptDTO | null>(null);
-  const [printing, setPrinting] = React.useState(false);
-  const [printerConnected, setPrinterConnected] = React.useState(true);
+  const [printReceipt, setPrintReceipt] = React.useState<ReceiptDTO | null>(null);
 
   React.useEffect(() => {
-    getAuthorizedPrinter().then((device) => setPrinterConnected(device !== null));
+    if (!printReceipt) return;
+    const timer = setTimeout(() => window.print(), 150);
+    return () => clearTimeout(timer);
+  }, [printReceipt]);
+
+  React.useEffect(() => {
+    function handleAfterPrint() {
+      setPrintReceipt(null);
+    }
+    window.addEventListener("afterprint", handleAfterPrint);
+    return () => window.removeEventListener("afterprint", handleAfterPrint);
   }, []);
 
   const filteredSevas = query.trim()
@@ -120,21 +123,6 @@ export function SellCart({
 
   const total = cart.reduce((sum, line) => sum + line.amount, 0);
 
-  async function printBill(receipt: ReceiptDTO, isCopy = false) {
-    setPrinting(true);
-    try {
-      await printReceiptToUsb(receipt, templeSettings, isCopy);
-    } catch (err) {
-      if (err instanceof PrinterNotConnectedError) {
-        toast.error("No printer connected. Connect one in Settings.");
-      } else {
-        toast.error("Could not print. Check the printer connection.");
-      }
-    } finally {
-      setPrinting(false);
-    }
-  }
-
   async function handleCheckout() {
     setSubmitting(true);
     try {
@@ -160,9 +148,8 @@ export function SellCart({
       }
 
       setCart([]);
-      setLastReceipt(data);
+      setPrintReceipt(data);
       toast.success(`Bill #${data.receiptNo} saved`);
-      await printBill(data);
     } finally {
       setSubmitting(false);
     }
@@ -170,18 +157,7 @@ export function SellCart({
 
   return (
     <div className="space-y-4 pb-24">
-      {!printerConnected ? (
-        <Card className="border-destructive/50">
-          <CardContent className="flex flex-wrap items-center justify-between gap-3 pt-6">
-            <p className="text-sm text-muted-foreground">
-              No printer connected — bills will be saved but won&apos;t print until you connect one.
-            </p>
-            <PrinterConnectButton onConnected={() => setPrinterConnected(true)} />
-          </CardContent>
-        </Card>
-      ) : null}
-
-      <Card>
+      <Card className="print:hidden">
         <CardHeader>
           <CardTitle className="text-base">Sell</CardTitle>
         </CardHeader>
@@ -312,20 +288,19 @@ export function SellCart({
         </CardContent>
       </Card>
 
-      <div className="fixed inset-x-0 bottom-0 z-10 border-t bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
+      <div className="fixed inset-x-0 bottom-0 z-10 border-t bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60 print:hidden">
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-3 py-3 sm:px-6">
           <div>
             <p className="text-xs text-muted-foreground">Total</p>
             <p className="text-lg font-semibold">{formatCurrency(total)}</p>
           </div>
           <div className="flex items-center gap-2">
-            {lastReceipt ? (
+            {printReceipt ? (
               <Button
                 type="button"
                 variant="outline"
-                disabled={printing}
-                aria-label={`Print bill ${lastReceipt.receiptNo} again`}
-                onClick={() => printBill(lastReceipt)}
+                aria-label={`Print bill ${printReceipt.receiptNo} again`}
+                onClick={() => window.print()}
               >
                 <Printer className="size-4" />
                 Print Again
@@ -345,6 +320,12 @@ export function SellCart({
           if (customSeva) addCustomSeva(customSeva, submission);
         }}
       />
+
+      {printReceipt ? (
+        <div className="hidden print:block">
+          <ReceiptDocument receipt={printReceipt} templeSettings={templeSettings} />
+        </div>
+      ) : null}
     </div>
   );
 }
