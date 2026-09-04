@@ -11,21 +11,41 @@ import {
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import type { CurrentUser } from "@/lib/auth";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LogoutButton } from "@/components/logout-button";
 
-const NAV_ITEMS = [
+type NavItem = {
+  readonly href: string;
+  readonly label: string;
+  readonly icon: typeof ShoppingCart;
+};
+
+const ADMIN_NAV_ITEMS: ReadonlyArray<NavItem> = [
   { href: "/sell", label: "Sell", icon: ShoppingCart },
   { href: "/sevas", label: "Sevas", icon: ScrollText },
   { href: "/history", label: "History", icon: History },
   { href: "/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/settings", label: "Settings", icon: Settings },
-] as const;
+];
 
-function NavLinks({ pathname, className }: { pathname: string | null; className?: string }) {
+const USER_NAV_ITEMS: ReadonlyArray<NavItem> = [
+  { href: "/sell", label: "Sell", icon: ShoppingCart },
+  { href: "/analytics", label: "Analytics", icon: BarChart3 },
+];
+
+function NavLinks({
+  pathname,
+  className,
+  items,
+}: {
+  pathname: string | null;
+  className?: string;
+  items: ReadonlyArray<NavItem>;
+}) {
   return (
     <nav className={cn("flex items-center gap-0.5 overflow-x-auto sm:gap-1", className)}>
-      {NAV_ITEMS.map((item) => {
+      {items.map((item) => {
         const isActive = pathname?.startsWith(item.href);
         const Icon = item.icon;
         return (
@@ -48,12 +68,23 @@ function NavLinks({ pathname, className }: { pathname: string | null; className?
   );
 }
 
-export function Nav({ templeName }: { templeName: string }) {
+export function Nav({
+  templeName,
+  user,
+}: {
+  templeName: string;
+  user: CurrentUser | null;
+}) {
   const pathname = usePathname();
 
-  if (pathname === "/login") {
+  if (pathname === "/login" || pathname === "/forgot-password" || pathname === "/reset-password") {
     return null;
   }
+  if (!user) {
+    return null;
+  }
+
+  const items = user.role === "admin" ? ADMIN_NAV_ITEMS : USER_NAV_ITEMS;
 
   return (
     <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60 print:hidden">
@@ -66,15 +97,21 @@ export function Nav({ templeName }: { templeName: string }) {
             {templeName}
           </Link>
 
-          <NavLinks pathname={pathname} className="hidden flex-1 justify-center sm:flex" />
+          <NavLinks pathname={pathname} className="hidden flex-1 justify-center sm:flex" items={items} />
 
           <div className="flex shrink-0 items-center gap-2">
+            <span
+              className="hidden text-xs text-muted-foreground sm:inline"
+              title={user.email}
+            >
+              {user.email}
+            </span>
             <ThemeToggle />
             <LogoutButton />
           </div>
         </div>
 
-        <NavLinks pathname={pathname} className="justify-center pb-2 sm:hidden" />
+        <NavLinks pathname={pathname} className="justify-center pb-2 sm:hidden" items={items} />
       </div>
     </header>
   );

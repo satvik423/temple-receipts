@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { GbnSettingsForm } from "@/components/gbn-settings-form";
+import { UsersSection } from "@/components/users-section";
 
 type SettingsValues = {
   name: string;
@@ -19,9 +20,11 @@ type SettingsValues = {
 export function SettingsForm({
   initialValues,
   currentGbn,
+  currentUserId,
 }: {
   initialValues: SettingsValues;
   currentGbn: number;
+  currentUserId: string;
 }) {
   const router = useRouter();
   const [name, setName] = React.useState(initialValues.name);
@@ -115,6 +118,8 @@ export function SettingsForm({
       </div>
 
       <GbnSettingsForm currentGbn={currentGbn} />
+
+      <UsersSection currentUserId={currentUserId} />
     </div>
   );
 }

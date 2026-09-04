@@ -1,5 +1,6 @@
 import type { Seva } from "@/models/Seva";
 import type { Receipt } from "@/models/Receipt";
+import type { User, UserRole } from "@/models/User";
 
 export type SevaDTO = {
   id: string;
@@ -72,5 +73,23 @@ export function toReceiptDTO(receipt: Receipt): ReceiptDTO {
     })),
     total: receipt.total,
     createdAt: receipt.createdAt.toISOString(),
+  };
+}
+
+export type UserDTO = {
+  id: string;
+  email: string;
+  role: UserRole;
+  active: boolean;
+  createdAt: string;
+};
+
+export function toUserDTO(user: User): UserDTO {
+  return {
+    id: user._id.toString(),
+    email: user.email,
+    role: user.role,
+    active: user.active,
+    createdAt: user.createdAt.toISOString(),
   };
 }
