@@ -140,7 +140,7 @@ export function SellCart({
     try {
       await printReceiptToUsb(receipt, templeSettings, isCopy);
     } catch (err) {
-      console.error("USB print failed, falling back to browser print:", err);
+      console.warn("USB print failed, falling back to browser print:", err);
       setBrowserPrintJob({ receipt, isCopy });
     } finally {
       setPrinting(false);

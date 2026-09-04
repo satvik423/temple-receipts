@@ -61,7 +61,7 @@ export function HistoryView({
     try {
       await printReceiptToUsb(receipt, templeSettings, true);
     } catch (err) {
-      console.error("USB print failed, falling back to browser print:", err);
+      console.warn("USB print failed, falling back to browser print:", err);
       setBrowserPrintReceipt(receipt);
     } finally {
       setReprintingId(null);
