@@ -345,7 +345,7 @@ export function SellCart({
 
       <Card className="print:hidden lg:hidden">
         <CardHeader>
-          <CardTitle className="text-base">Sell</CardTitle>
+          <CardTitle className="text-base">Seva</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           {sevas.length === 0 ? (

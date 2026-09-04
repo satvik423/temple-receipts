@@ -16,7 +16,7 @@ export default function NotFound() {
             The page you&apos;re looking for doesn&apos;t exist.
           </p>
           <Button asChild>
-            <Link href="/sell">Go to Sell</Link>
+            <Link href="/sell">Go to Seva</Link>
           </Button>
         </CardContent>
       </Card>

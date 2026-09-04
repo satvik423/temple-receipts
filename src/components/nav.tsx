@@ -22,15 +22,15 @@ type NavItem = {
 };
 
 const ADMIN_NAV_ITEMS: ReadonlyArray<NavItem> = [
-  { href: "/sell", label: "Sell", icon: ShoppingCart },
-  { href: "/sevas", label: "Sevas", icon: ScrollText },
+  { href: "/sell", label: "Seva", icon: ShoppingCart },
+  { href: "/sevas", label: "Add Seva", icon: ScrollText },
   { href: "/history", label: "History", icon: History },
   { href: "/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 
 const USER_NAV_ITEMS: ReadonlyArray<NavItem> = [
-  { href: "/sell", label: "Sell", icon: ShoppingCart },
+  { href: "/sell", label: "Seva", icon: ShoppingCart },
   { href: "/analytics", label: "Analytics", icon: BarChart3 },
 ];
 
