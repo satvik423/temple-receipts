@@ -31,7 +31,6 @@ const ADMIN_NAV_ITEMS: ReadonlyArray<NavItem> = [
 
 const USER_NAV_ITEMS: ReadonlyArray<NavItem> = [
   { href: "/sell", label: "Seva", icon: ShoppingCart },
-  { href: "/analytics", label: "Analytics", icon: BarChart3 },
 ];
 
 function NavLinks({

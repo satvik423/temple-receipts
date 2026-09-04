@@ -42,7 +42,7 @@ export async function requireUser(nextPath?: string): Promise<CurrentUser> {
 export async function requireAdmin(nextPath?: string): Promise<CurrentUser> {
   const user = await requireUser(nextPath);
   if (user.role !== "admin") {
-    redirect(nextPath ?? "/sell");
+    redirect("/sell");
   }
   return user;
 }
