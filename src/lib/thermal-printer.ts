@@ -46,8 +46,12 @@ async function openForPrinting(
     const alternate = iface.alternates[0];
     const outEndpoint = alternate.endpoints.find((endpoint) => endpoint.direction === "out");
     if (outEndpoint) {
-      await device.claimInterface(iface.interfaceNumber);
-      return { endpointNumber: outEndpoint.endpointNumber };
+      try {
+        await device.claimInterface(iface.interfaceNumber);
+        return { endpointNumber: outEndpoint.endpointNumber };
+      } catch (err) {
+        console.warn(`Could not claim interface ${iface.interfaceNumber}:`, err);
+      }
     }
   }
 
