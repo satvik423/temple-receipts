@@ -8,8 +8,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { CustomSevaDialog, type CustomSevaSubmission } from "@/components/custom-seva-dialog";
-import { ReceiptDocument } from "@/components/receipt-document";
+import { PrinterConnectButton } from "@/components/printer-connect-button";
 import { formatCurrency } from "@/lib/format";
+import {
+  PrinterNotConnectedError,
+  getAuthorizedPrinter,
+  printReceiptToUsb,
+} from "@/lib/thermal-printer";
 import type { ReceiptDTO, SevaDTO } from "@/lib/dto";
 
 type CartLine = {
@@ -36,19 +41,11 @@ export function SellCart({
   const [submitting, setSubmitting] = React.useState(false);
   const [query, setQuery] = React.useState("");
   const [printReceipt, setPrintReceipt] = React.useState<ReceiptDTO | null>(null);
+  const [printing, setPrinting] = React.useState(false);
+  const [printerConnected, setPrinterConnected] = React.useState(true);
 
   React.useEffect(() => {
-    if (!printReceipt) return;
-    const timer = setTimeout(() => window.print(), 150);
-    return () => clearTimeout(timer);
-  }, [printReceipt]);
-
-  React.useEffect(() => {
-    function handleAfterPrint() {
-      setPrintReceipt(null);
-    }
-    window.addEventListener("afterprint", handleAfterPrint);
-    return () => window.removeEventListener("afterprint", handleAfterPrint);
+    getAuthorizedPrinter().then((device) => setPrinterConnected(device !== null));
   }, []);
 
   const filteredSevas = query.trim()
@@ -123,6 +120,22 @@ export function SellCart({
 
   const total = cart.reduce((sum, line) => sum + line.amount, 0);
 
+  async function printBill(receipt: ReceiptDTO, isCopy = false) {
+    setPrinting(true);
+    try {
+      await printReceiptToUsb(receipt, templeSettings, isCopy);
+    } catch (err) {
+      console.error("Print error:", err);
+      if (err instanceof PrinterNotConnectedError) {
+        toast.error("No printer connected. Connect one in Settings.");
+      } else {
+        toast.error(`Could not print: ${err instanceof Error ? err.message : String(err)}`);
+      }
+    } finally {
+      setPrinting(false);
+    }
+  }
+
   async function handleCheckout() {
     setSubmitting(true);
     try {
@@ -150,6 +163,7 @@ export function SellCart({
       setCart([]);
       setPrintReceipt(data);
       toast.success(`Bill #${data.receiptNo} saved`);
+      await printBill(data);
     } finally {
       setSubmitting(false);
     }
@@ -157,6 +171,17 @@ export function SellCart({
 
   return (
     <div className="space-y-4 pb-24 lg:pb-0">
+      {!printerConnected ? (
+        <Card className="border-destructive/50 print:hidden">
+          <CardContent className="flex flex-wrap items-center justify-between gap-3 pt-6">
+            <p className="text-sm text-muted-foreground">
+              No printer connected — bills will be saved but won&apos;t print until you connect one.
+            </p>
+            <PrinterConnectButton onConnected={() => setPrinterConnected(true)} />
+          </CardContent>
+        </Card>
+      ) : null}
+
       <div className="lg:grid lg:grid-cols-[1fr_360px] lg:gap-4">
         <Card className="hidden print:hidden lg:block">
           <CardHeader>
@@ -287,8 +312,9 @@ export function SellCart({
                 type="button"
                 variant="outline"
                 className="w-full"
+                disabled={printing}
                 aria-label={`Print bill ${printReceipt.receiptNo} again`}
-                onClick={() => window.print()}
+                onClick={() => printBill(printReceipt)}
               >
                 <Printer className="size-4" />
                 Print Again
@@ -449,8 +475,9 @@ export function SellCart({
               <Button
                 type="button"
                 variant="outline"
+                disabled={printing}
                 aria-label={`Print bill ${printReceipt.receiptNo} again`}
-                onClick={() => window.print()}
+                onClick={() => printBill(printReceipt)}
               >
                 <Printer className="size-4" />
                 Print Again
@@ -470,12 +497,6 @@ export function SellCart({
           if (customSeva) addCustomSeva(customSeva, submission);
         }}
       />
-
-      {printReceipt ? (
-        <div className="hidden print:block">
-          <ReceiptDocument receipt={printReceipt} templeSettings={templeSettings} />
-        </div>
-      ) : null}
     </div>
   );
 }
