@@ -3,7 +3,6 @@
 import * as React from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ChevronLeft, ChevronRight, Printer } from "lucide-react";
-import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,9 +16,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { HistoryReportDialog } from "@/components/history-report-dialog";
+import { ReceiptDocument } from "@/components/receipt-document";
 import { formatCurrency } from "@/lib/format";
 import { formatReceiptDate, formatReceiptTime, shiftBusinessDate } from "@/lib/date";
-import { PrinterNotConnectedError, printReceiptToUsb } from "@/lib/thermal-printer";
+import { printReceiptToUsb } from "@/lib/thermal-printer";
 import type { ReceiptDTO } from "@/lib/dto";
 import { displaySevaName } from "@/lib/dto";
 
@@ -40,18 +40,29 @@ export function HistoryView({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [reprintingId, setReprintingId] = React.useState<string | null>(null);
+  const [browserPrintReceipt, setBrowserPrintReceipt] = React.useState<ReceiptDTO | null>(null);
+
+  React.useEffect(() => {
+    if (!browserPrintReceipt) return;
+    const timer = setTimeout(() => window.print(), 150);
+    return () => clearTimeout(timer);
+  }, [browserPrintReceipt]);
+
+  React.useEffect(() => {
+    function handleAfterPrint() {
+      setBrowserPrintReceipt(null);
+    }
+    window.addEventListener("afterprint", handleAfterPrint);
+    return () => window.removeEventListener("afterprint", handleAfterPrint);
+  }, []);
 
   async function handleReprint(receipt: ReceiptDTO) {
     setReprintingId(receipt.id);
     try {
       await printReceiptToUsb(receipt, templeSettings, true);
     } catch (err) {
-      console.error("Print error:", err);
-      if (err instanceof PrinterNotConnectedError) {
-        toast.error("No printer connected. Connect one in Settings.");
-      } else {
-        toast.error(`Could not print: ${err instanceof Error ? err.message : String(err)}`);
-      }
+      console.error("USB print failed, falling back to browser print:", err);
+      setBrowserPrintReceipt(receipt);
     } finally {
       setReprintingId(null);
     }
@@ -179,6 +190,12 @@ export function HistoryView({
           )}
         </CardContent>
       </Card>
+
+      {browserPrintReceipt ? (
+        <div className="hidden print:block">
+          <ReceiptDocument receipt={browserPrintReceipt} templeSettings={templeSettings} isCopy />
+        </div>
+      ) : null}
     </div>
   );
 }

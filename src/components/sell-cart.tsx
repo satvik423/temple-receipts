@@ -9,12 +9,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { CustomSevaDialog, type CustomSevaSubmission } from "@/components/custom-seva-dialog";
 import { PrinterConnectButton } from "@/components/printer-connect-button";
+import { ReceiptDocument } from "@/components/receipt-document";
 import { formatCurrency } from "@/lib/format";
-import {
-  PrinterNotConnectedError,
-  getAuthorizedPrinter,
-  printReceiptToUsb,
-} from "@/lib/thermal-printer";
+import { getAuthorizedPrinter, printReceiptToUsb } from "@/lib/thermal-printer";
 import type { ReceiptDTO, SevaDTO } from "@/lib/dto";
 
 type CartLine = {
@@ -43,9 +40,27 @@ export function SellCart({
   const [printReceipt, setPrintReceipt] = React.useState<ReceiptDTO | null>(null);
   const [printing, setPrinting] = React.useState(false);
   const [printerConnected, setPrinterConnected] = React.useState(true);
+  const [browserPrintJob, setBrowserPrintJob] = React.useState<{
+    receipt: ReceiptDTO;
+    isCopy: boolean;
+  } | null>(null);
 
   React.useEffect(() => {
     getAuthorizedPrinter().then((device) => setPrinterConnected(device !== null));
+  }, []);
+
+  React.useEffect(() => {
+    if (!browserPrintJob) return;
+    const timer = setTimeout(() => window.print(), 150);
+    return () => clearTimeout(timer);
+  }, [browserPrintJob]);
+
+  React.useEffect(() => {
+    function handleAfterPrint() {
+      setBrowserPrintJob(null);
+    }
+    window.addEventListener("afterprint", handleAfterPrint);
+    return () => window.removeEventListener("afterprint", handleAfterPrint);
   }, []);
 
   const filteredSevas = query.trim()
@@ -125,12 +140,8 @@ export function SellCart({
     try {
       await printReceiptToUsb(receipt, templeSettings, isCopy);
     } catch (err) {
-      console.error("Print error:", err);
-      if (err instanceof PrinterNotConnectedError) {
-        toast.error("No printer connected. Connect one in Settings.");
-      } else {
-        toast.error(`Could not print: ${err instanceof Error ? err.message : String(err)}`);
-      }
+      console.error("USB print failed, falling back to browser print:", err);
+      setBrowserPrintJob({ receipt, isCopy });
     } finally {
       setPrinting(false);
     }
@@ -497,6 +508,16 @@ export function SellCart({
           if (customSeva) addCustomSeva(customSeva, submission);
         }}
       />
+
+      {browserPrintJob ? (
+        <div className="hidden print:block">
+          <ReceiptDocument
+            receipt={browserPrintJob.receipt}
+            templeSettings={templeSettings}
+            isCopy={browserPrintJob.isCopy}
+          />
+        </div>
+      ) : null}
     </div>
   );
 }
