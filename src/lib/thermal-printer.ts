@@ -39,19 +39,52 @@ export async function requestPrinter(): Promise<USBDevice> {
 async function openForPrinting(
   device: USBDevice,
 ): Promise<{ endpointNumber: number }> {
-  if (!device.opened) await device.open();
-  if (!device.configuration) await device.selectConfiguration(1);
+  try {
+    if (!device.opened) await device.open();
+  } catch (err) {
+    throw new Error(`Failed to open device: ${err instanceof Error ? err.message : String(err)}`);
+  }
+
+  try {
+    if (!device.configuration) await device.selectConfiguration(1);
+  } catch (err) {
+    throw new Error(`Failed to select configuration: ${err instanceof Error ? err.message : String(err)}`);
+  }
+
+  const errors: string[] = [];
 
   for (const iface of device.configuration!.interfaces) {
-    const alternate = iface.alternates[0];
-    const outEndpoint = alternate.endpoints.find((endpoint) => endpoint.direction === "out");
-    if (outEndpoint) {
-      await device.claimInterface(iface.interfaceNumber);
-      return { endpointNumber: outEndpoint.endpointNumber };
+    // Some devices have multiple alternate interfaces, need to check all
+    for (const alternate of iface.alternates) {
+      // Look for bulk out endpoint
+      const outEndpoint = alternate.endpoints.find(
+        (endpoint) => endpoint.direction === "out" && endpoint.type === "bulk"
+      );
+
+      if (outEndpoint) {
+        try {
+          await device.claimInterface(iface.interfaceNumber);
+
+          // If this alternate is not the currently active one, we might need to select it
+          if (alternate.alternateSetting !== iface.alternate.alternateSetting) {
+            await device.selectAlternateInterface(iface.interfaceNumber, alternate.alternateSetting);
+          }
+
+          return { endpointNumber: outEndpoint.endpointNumber };
+        } catch (err) {
+          const errMsg = err instanceof Error ? err.message : String(err);
+          console.warn(`Could not claim interface ${iface.interfaceNumber} alt ${alternate.alternateSetting}:`, err);
+          errors.push(`Iface ${iface.interfaceNumber} alt ${alternate.alternateSetting}: ${errMsg}`);
+        }
+      }
     }
   }
 
-  throw new Error("No printable USB endpoint found on this device.");
+  if (errors.length > 0) {
+    throw new Error(`Could not claim any suitable interface. Errors: ${errors.join(", ")}`);
+  }
+
+  throw new Error("No bulk OUT USB endpoint found on this device's interfaces.");
 }
 
 function setFont(ctx: CanvasRenderingContext2D, size: number, bold = true) {

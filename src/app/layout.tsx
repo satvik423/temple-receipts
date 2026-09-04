@@ -1,3 +1,4 @@
+import * as React from "react";
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
@@ -33,7 +34,7 @@ export const viewport: Viewport = {
   themeColor: "#b54708",
 };
 
-export default async function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const settings = await getOrCreateSettings();
 
   return (

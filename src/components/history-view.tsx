@@ -45,10 +45,11 @@ export function HistoryView({
     try {
       await printReceiptToUsb(receipt, templeSettings, true);
     } catch (err) {
+      console.error("Print error:", err);
       if (err instanceof PrinterNotConnectedError) {
         toast.error("No printer connected. Connect one in Settings.");
       } else {
-        toast.error("Could not print. Check the printer connection.");
+        toast.error(`Could not print: ${err instanceof Error ? err.message : String(err)}`);
       }
     } finally {
       setReprintingId(null);
