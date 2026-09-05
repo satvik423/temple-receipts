@@ -147,8 +147,11 @@ function renderReceiptCanvas(
   function centerText(text: string, size = FONT_NORMAL) {
     setFont(ctx, size);
     ctx.textAlign = "center";
-    ctx.fillText(text, width / 2, y);
-    y += LINE_H;
+    const lines = wrapText(ctx, text, contentWidth);
+    for (const line of lines) {
+      ctx.fillText(line, width / 2, y);
+      y += LINE_H;
+    }
   }
 
   function dashedLine() {
@@ -181,8 +184,19 @@ function renderReceiptCanvas(
 
   function twoCol(left: string, right: string, size = FONT_NORMAL) {
     setFont(ctx, size);
+    const gap = 12;
+    const fitsOneLine =
+      ctx.measureText(left).width + ctx.measureText(right).width + gap <= contentWidth;
+
     ctx.textAlign = "left";
     ctx.fillText(left, PAD, y);
+    if (fitsOneLine) {
+      ctx.textAlign = "right";
+      ctx.fillText(right, width - PAD, y);
+      y += LINE_H;
+      return;
+    }
+    y += LINE_H;
     ctx.textAlign = "right";
     ctx.fillText(right, width - PAD, y);
     y += LINE_H;
