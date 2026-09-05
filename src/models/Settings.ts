@@ -8,6 +8,7 @@ const SettingsSchema = new Schema(
     name: { type: String, required: true, trim: true },
     place: { type: String, required: true, trim: true },
     phone: { type: String, required: true, trim: true },
+    upiId: { type: String, trim: true },
   },
   { timestamps: true },
 );

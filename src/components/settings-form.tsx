@@ -16,6 +16,7 @@ type SettingsValues = {
   name: string;
   place: string;
   phone: string;
+  upiId: string;
 };
 
 export function SettingsForm({
@@ -31,6 +32,7 @@ export function SettingsForm({
   const [name, setName] = React.useState(initialValues.name);
   const [place, setPlace] = React.useState(initialValues.place);
   const [phone, setPhone] = React.useState(initialValues.phone);
+  const [upiId, setUpiId] = React.useState(initialValues.upiId);
   const [error, setError] = React.useState<string | null>(null);
   const [submitting, setSubmitting] = React.useState(false);
 
@@ -43,7 +45,7 @@ export function SettingsForm({
       const res = await fetch("/api/settings", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, place, phone }),
+        body: JSON.stringify({ name, place, phone, upiId }),
       });
 
       const data = await res.json().catch(() => null);
@@ -117,6 +119,33 @@ export function SettingsForm({
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">UPI Payment</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="upi-id">UPI ID (VPA)</Label>
+              <Input
+                id="upi-id"
+                value={upiId}
+                onChange={(e) => setUpiId(e.target.value)}
+                placeholder="temple@upi"
+              />
+            </div>
+            {error ? <p className="text-sm text-destructive">{error}</p> : null}
+            <Button type="submit" disabled={submitting || !canSubmit}>
+              {submitting ? "Saving..." : "Save"}
+            </Button>
+          </form>
+          <p className="text-xs text-muted-foreground">
+            When set, a UPI QR code pre-filled with the receipt amount is printed on receipts and
+            Kanike vouchers. Leave blank to hide the QR code.
+          </p>
+        </CardContent>
+      </Card>
 
       <GbnSettingsForm currentGbn={currentGbn} />
 

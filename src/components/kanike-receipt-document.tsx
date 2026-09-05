@@ -1,6 +1,7 @@
 import { formatReceiptDate } from "@/lib/date";
 import { amountToWords } from "@/lib/number-to-words";
-import type { KanikeRowDTO } from "@/lib/dto";
+import { buildUpiUri, generateQrDataUrl } from "@/lib/upi-qr";
+import type { KanikeRowDTO, TempleHeaderDTO } from "@/lib/dto";
 import styles from "./kanike-receipt-view.module.css";
 
 export function KanikeReceiptDocument({
@@ -8,12 +9,22 @@ export function KanikeReceiptDocument({
   templeSettings,
 }: {
   row: KanikeRowDTO;
-  templeSettings: { name: string; place: string; phone: string };
+  templeSettings: TempleHeaderDTO;
 }) {
   const createdAt = new Date(row.createdAt);
   const nameAndAddress = row.bhaktaAddress
     ? `${row.bhaktaName}, ${row.bhaktaAddress}`
     : row.bhaktaName;
+  const qrDataUrl = templeSettings.upiId
+    ? generateQrDataUrl(
+        buildUpiUri({
+          upiId: templeSettings.upiId,
+          payeeName: templeSettings.name,
+          amount: row.amount,
+          note: `Receipt #${row.receiptNo}`,
+        }),
+      )
+    : null;
 
   return (
     <div className={styles.outer}>
@@ -66,6 +77,13 @@ export function KanikeReceiptDocument({
           <div className={styles.amountBox}>
             ₹ <span className={styles.filled}>{row.amount.toLocaleString("en-IN")}</span>
           </div>
+          {qrDataUrl ? (
+            <div className={styles.qrSection}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={qrDataUrl} alt="" className={styles.qrCode} />
+              <p className={styles.qrCaption}>Scan &amp; Pay via UPI</p>
+            </div>
+          ) : null}
           <div className={styles.signature}>Authorised Signatory</div>
         </div>
       </div>

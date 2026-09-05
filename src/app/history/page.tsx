@@ -34,7 +34,12 @@ export default async function HistoryPage({
       totalAmount={totalAmountResult[0]?.total ?? 0}
       date={date}
       today={today}
-      templeSettings={{ name: settings.name, place: settings.place, phone: settings.phone }}
+      templeSettings={{
+        name: settings.name,
+        place: settings.place,
+        phone: settings.phone,
+        upiId: settings.upiId ?? undefined,
+      }}
     />
   );
 }

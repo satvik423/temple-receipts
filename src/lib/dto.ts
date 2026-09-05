@@ -2,6 +2,13 @@ import type { Seva } from "@/models/Seva";
 import type { Receipt } from "@/models/Receipt";
 import type { User, UserRole } from "@/models/User";
 
+export type TempleHeaderDTO = {
+  name: string;
+  place: string;
+  phone: string;
+  upiId?: string;
+};
+
 export type SevaDTO = {
   id: string;
   name: string;

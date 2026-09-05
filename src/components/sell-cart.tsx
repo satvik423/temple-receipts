@@ -12,7 +12,7 @@ import { PrinterConnectButton } from "@/components/printer-connect-button";
 import { ReceiptDocument } from "@/components/receipt-document";
 import { formatCurrency } from "@/lib/format";
 import { getAuthorizedPrinter, printReceiptToUsb } from "@/lib/thermal-printer";
-import type { ReceiptDTO, SevaDTO } from "@/lib/dto";
+import type { ReceiptDTO, SevaDTO, TempleHeaderDTO } from "@/lib/dto";
 
 type CartLine = {
   key: string;
@@ -31,7 +31,7 @@ export function SellCart({
   templeSettings,
 }: {
   sevas: SevaDTO[];
-  templeSettings: { name: string; place: string; phone: string };
+  templeSettings: TempleHeaderDTO;
 }) {
   const [cart, setCart] = React.useState<CartLine[]>([]);
   const [customSeva, setCustomSeva] = React.useState<SevaDTO | null>(null);

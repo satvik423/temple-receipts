@@ -83,6 +83,24 @@
   font-weight: bold;
 }
 
+.qrSection {
+  text-align: center;
+  margin-top: 8px;
+}
+
+.qrCode {
+  display: block;
+  width: 28mm;
+  height: 28mm;
+  margin: 0 auto;
+}
+
+.qrCaption {
+  margin: 2px 0 0;
+  font-size: 10px;
+  font-weight: normal;
+}
+
 @media print {
   @page {
     size: 80mm auto;

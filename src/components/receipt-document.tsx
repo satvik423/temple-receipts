@@ -1,6 +1,7 @@
 import { formatCurrency } from "@/lib/format";
 import { formatReceiptDate, formatReceiptTime } from "@/lib/date";
-import type { ReceiptDTO } from "@/lib/dto";
+import { buildUpiUri, generateQrDataUrl } from "@/lib/upi-qr";
+import type { ReceiptDTO, TempleHeaderDTO } from "@/lib/dto";
 import styles from "./receipt-print-view.module.css";
 
 export function ReceiptDocument({
@@ -9,11 +10,21 @@ export function ReceiptDocument({
   isCopy = false,
 }: {
   receipt: ReceiptDTO;
-  templeSettings: { name: string; place: string; phone: string };
+  templeSettings: TempleHeaderDTO;
   isCopy?: boolean;
 }) {
   const createdAt = new Date(receipt.createdAt);
   const customItems = receipt.items.filter((item) => item.isCustom);
+  const qrDataUrl = templeSettings.upiId
+    ? generateQrDataUrl(
+        buildUpiUri({
+          upiId: templeSettings.upiId,
+          payeeName: templeSettings.name,
+          amount: receipt.total,
+          note: `Receipt #${receipt.receiptNo}`,
+        }),
+      )
+    : null;
 
   return (
     <div className={styles.receipt}>
@@ -74,6 +85,14 @@ export function ReceiptDocument({
         <span className={styles.qty} />
         <span className={styles.amount}>{formatCurrency(receipt.total)}</span>
       </div>
+
+      {qrDataUrl ? (
+        <div className={styles.qrSection}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={qrDataUrl} alt="" className={styles.qrCode} />
+          <p className={styles.qrCaption}>Scan &amp; Pay via UPI</p>
+        </div>
+      ) : null}
     </div>
   );
 }

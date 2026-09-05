@@ -20,6 +20,7 @@ export default async function SettingsPage() {
         name: settings.name,
         place: settings.place,
         phone: settings.phone,
+        upiId: settings.upiId ?? "",
       }}
       currentGbn={currentGbn}
       currentUserId={current.id}
