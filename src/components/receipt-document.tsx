@@ -18,6 +18,8 @@ export function ReceiptDocument({
   return (
     <div className={styles.receipt}>
       <div className={styles.center}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/logo.png" alt="" className={styles.logo} />
         <p>{templeSettings.name},</p>
         <p>{templeSettings.place}</p>
         <p>Mob: {templeSettings.phone}</p>

@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -94,9 +95,19 @@ export function Nav({
         <div className="flex min-h-14 items-center gap-2 py-2 sm:h-14 sm:py-0">
           <Link
             href="/sell"
-            className="min-w-0 flex-1 text-balance break-words font-semibold tracking-tight sm:max-w-[220px] sm:flex-none sm:truncate md:max-w-none"
+            className="flex min-w-0 flex-1 items-center gap-2 sm:flex-none"
           >
-            {templeName}
+            <Image
+              src="/logo.png"
+              alt=""
+              width={32}
+              height={59}
+              className="h-9 w-auto shrink-0"
+              priority
+            />
+            <span className="min-w-0 text-balance break-words font-semibold tracking-tight sm:max-w-[220px] sm:truncate md:max-w-none">
+              {templeName}
+            </span>
           </Link>
 
           <NavLinks pathname={pathname} className="hidden flex-1 justify-center sm:flex" items={items} />

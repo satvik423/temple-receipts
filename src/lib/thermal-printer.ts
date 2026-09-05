@@ -87,6 +87,15 @@ async function openForPrinting(
   throw new Error("No bulk OUT USB endpoint found on this device's interfaces.");
 }
 
+function loadImage(src: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error(`Failed to load ${src}`));
+    img.src = src;
+  });
+}
+
 function setFont(ctx: CanvasRenderingContext2D, size: number, bold = true) {
   ctx.font = `${bold ? "bold " : ""}${size}px "Noto Sans Kannada", "Noto Sans", sans-serif`;
   ctx.fillStyle = "#000";
@@ -126,11 +135,11 @@ function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number)
   return lines;
 }
 
-function renderReceiptCanvas(
+async function renderReceiptCanvas(
   receipt: ReceiptDTO,
   templeSettings: { name: string; place: string; phone: string },
   isCopy: boolean,
-): HTMLCanvasElement {
+): Promise<HTMLCanvasElement> {
   const width = PRINTER_WIDTH_DOTS;
   const contentWidth = width - PAD * 2;
   const nameColWidth = contentWidth - QTY_COL_WIDTH - AMOUNT_COL_WIDTH - 16;
@@ -197,6 +206,16 @@ function renderReceiptCanvas(
       }
       y += size === FONT_TOTAL ? LINE_H + 6 : LINE_H;
     });
+  }
+
+  try {
+    const logo = await loadImage("/logo.png");
+    const logoHeight = 150;
+    const logoWidth = logo.width * (logoHeight / logo.height);
+    ctx.drawImage(logo, (width - logoWidth) / 2, y, logoWidth, logoHeight);
+    y += logoHeight + 10;
+  } catch (err) {
+    console.warn("Could not load logo for printing:", err);
   }
 
   centerText(`${templeSettings.name},`);
@@ -326,7 +345,7 @@ export async function printReceiptToUsb(
     throw new PrinterNotConnectedError();
   }
 
-  const canvas = renderReceiptCanvas(receipt, templeSettings, isCopy);
+  const canvas = await renderReceiptCanvas(receipt, templeSettings, isCopy);
   const data = canvasToEscPosRaster(canvas);
   await sendToPrinter(device, data);
 }

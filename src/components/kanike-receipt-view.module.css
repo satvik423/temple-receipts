@@ -29,6 +29,13 @@
   margin: 0;
 }
 
+.logo {
+  display: block;
+  height: 18mm;
+  width: auto;
+  margin: 0 auto 2mm;
+}
+
 .templeName {
   font-size: 19px;
   font-weight: bold;
