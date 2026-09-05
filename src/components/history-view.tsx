@@ -20,7 +20,7 @@ import { ReceiptDocument } from "@/components/receipt-document";
 import { formatCurrency } from "@/lib/format";
 import { formatReceiptDate, formatReceiptTime, shiftBusinessDate } from "@/lib/date";
 import { printReceiptToUsb } from "@/lib/thermal-printer";
-import type { ReceiptDTO } from "@/lib/dto";
+import type { ReceiptDTO, TempleHeaderDTO } from "@/lib/dto";
 import { displaySevaName } from "@/lib/dto";
 
 export function HistoryView({
@@ -34,7 +34,7 @@ export function HistoryView({
   totalAmount: number;
   date: string;
   today: string;
-  templeSettings: { name: string; place: string; phone: string };
+  templeSettings: TempleHeaderDTO;
 }) {
   const router = useRouter();
   const pathname = usePathname();

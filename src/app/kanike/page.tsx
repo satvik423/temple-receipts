@@ -40,7 +40,12 @@ export default async function KanikePage({
       rows={rows}
       date={date}
       today={today}
-      templeSettings={{ name: settings.name, place: settings.place, phone: settings.phone }}
+      templeSettings={{
+        name: settings.name,
+        place: settings.place,
+        phone: settings.phone,
+        upiId: settings.upiId ?? undefined,
+      }}
     />
   );
 }

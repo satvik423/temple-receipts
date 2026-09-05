@@ -1,6 +1,7 @@
 import { formatCurrency } from "@/lib/format";
 import { formatReceiptDate, formatReceiptTime } from "@/lib/date";
-import type { ReceiptDTO } from "@/lib/dto";
+import { buildUpiUri, generateQrDataUrl } from "@/lib/upi-qr";
+import type { ReceiptDTO, TempleHeaderDTO } from "@/lib/dto";
 
 export class PrinterNotConnectedError extends Error {
   constructor() {
@@ -137,7 +138,7 @@ function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number)
 
 async function renderReceiptCanvas(
   receipt: ReceiptDTO,
-  templeSettings: { name: string; place: string; phone: string },
+  templeSettings: TempleHeaderDTO,
   isCopy: boolean,
 ): Promise<HTMLCanvasElement> {
   const width = PRINTER_WIDTH_DOTS;
@@ -268,6 +269,27 @@ async function renderReceiptCanvas(
   dashedLine();
   tableRow("TOTAL", "", formatCurrency(receipt.total), FONT_TOTAL);
 
+  if (templeSettings.upiId) {
+    y += 20;
+    try {
+      const qrDataUrl = generateQrDataUrl(
+        buildUpiUri({
+          upiId: templeSettings.upiId,
+          payeeName: templeSettings.name,
+          amount: receipt.total,
+          note: `Receipt #${receipt.receiptNo}`,
+        }),
+      );
+      const qrImage = await loadImage(qrDataUrl);
+      const qrSize = 220;
+      ctx.drawImage(qrImage, (width - qrSize) / 2, y, qrSize, qrSize);
+      y += qrSize + 10;
+      centerText("Scan & Pay via UPI", FONT_SMALL);
+    } catch (err) {
+      console.warn("Could not render UPI QR code:", err);
+    }
+  }
+
   y += 40;
 
   const finalCanvas = document.createElement("canvas");
@@ -337,7 +359,7 @@ async function sendToPrinter(device: USBDevice, data: Uint8Array): Promise<void>
 
 export async function printReceiptToUsb(
   receipt: ReceiptDTO,
-  templeSettings: { name: string; place: string; phone: string },
+  templeSettings: TempleHeaderDTO,
   isCopy = false,
 ): Promise<void> {
   const device = await getAuthorizedPrinter();

@@ -6,14 +6,14 @@ import { Plus, Printer } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { ReceiptDocument } from "@/components/receipt-document";
-import type { ReceiptDTO } from "@/lib/dto";
+import type { ReceiptDTO, TempleHeaderDTO } from "@/lib/dto";
 
 export function ReceiptPrintView({
   receipt,
   templeSettings,
 }: {
   receipt: ReceiptDTO;
-  templeSettings: { name: string; place: string; phone: string };
+  templeSettings: TempleHeaderDTO;
 }) {
   const hasAutoPrinted = React.useRef(false);
 

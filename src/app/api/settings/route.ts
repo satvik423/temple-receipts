@@ -7,6 +7,7 @@ export async function PATCH(request: Request) {
   const name = typeof body?.name === "string" ? body.name.trim() : "";
   const place = typeof body?.place === "string" ? body.place.trim() : "";
   const phone = typeof body?.phone === "string" ? body.phone.trim() : "";
+  const upiId = typeof body?.upiId === "string" ? body.upiId.trim() : "";
 
   if (!name || !place || !phone) {
     return NextResponse.json(
@@ -18,7 +19,7 @@ export async function PATCH(request: Request) {
   await connectToDatabase();
   const settings = await SettingsModel.findByIdAndUpdate(
     SETTINGS_DOC_ID,
-    { name, place, phone },
+    { name, place, phone, upiId },
     { returnDocument: "after", upsert: true },
   );
 
@@ -26,5 +27,6 @@ export async function PATCH(request: Request) {
     name: settings.name,
     place: settings.place,
     phone: settings.phone,
+    upiId: settings.upiId,
   });
 }

@@ -22,7 +22,7 @@ import { KanikeEditDialog } from "@/components/kanike-edit-dialog";
 import { KanikeReceiptDocument } from "@/components/kanike-receipt-document";
 import { formatCurrency } from "@/lib/format";
 import { formatReceiptDate, formatReceiptTime, shiftBusinessDate } from "@/lib/date";
-import { displaySevaName, type KanikeRowDTO, type SevaDTO } from "@/lib/dto";
+import { displaySevaName, type KanikeRowDTO, type SevaDTO, type TempleHeaderDTO } from "@/lib/dto";
 
 const LAST_TYPE_STORAGE_KEY = "kanike:lastTypeId";
 
@@ -37,7 +37,7 @@ export function KanikeView({
   rows: KanikeRowDTO[];
   date: string;
   today: string;
-  templeSettings: { name: string; place: string; phone: string };
+  templeSettings: TempleHeaderDTO;
 }) {
   const router = useRouter();
   const pathname = usePathname();

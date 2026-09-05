@@ -16,7 +16,12 @@ export default async function SellPage() {
   return (
     <SellCart
       sevas={sevas.map(toSevaDTO)}
-      templeSettings={{ name: settings.name, place: settings.place, phone: settings.phone }}
+      templeSettings={{
+        name: settings.name,
+        place: settings.place,
+        phone: settings.phone,
+        upiId: settings.upiId ?? undefined,
+      }}
     />
   );
 }

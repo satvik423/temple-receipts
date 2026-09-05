@@ -32,7 +32,12 @@ export default async function PrintReceiptPage({
   return (
     <ReceiptPrintView
       receipt={toReceiptDTO(receipt)}
-      templeSettings={{ name: settings.name, place: settings.place, phone: settings.phone }}
+      templeSettings={{
+        name: settings.name,
+        place: settings.place,
+        phone: settings.phone,
+        upiId: settings.upiId ?? undefined,
+      }}
     />
   );
 }
