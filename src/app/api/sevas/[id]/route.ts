@@ -7,7 +7,13 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const { id } = await params;
   const body = await request.json().catch(() => null);
 
-  const update: { name?: string; price?: number | null; active?: boolean } = {};
+  const update: {
+    name?: string;
+    nameEn?: string | null;
+    price?: number | null;
+    active?: boolean;
+    category?: "seva" | "kanike";
+  } = {};
 
   if (body?.name !== undefined) {
     const name = typeof body.name === "string" ? body.name.trim() : "";
@@ -17,8 +23,18 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     update.name = name;
   }
 
+  if (body?.nameEn !== undefined) {
+    const rawNameEn = typeof body.nameEn === "string" ? body.nameEn.trim() : "";
+    update.nameEn = rawNameEn.length > 0 ? rawNameEn : null;
+  }
+
+  if (body?.category !== undefined) {
+    update.category = body.category === "kanike" ? "kanike" : "seva";
+  }
+
   if (body?.isCustom !== undefined) {
-    if (body.isCustom === true) {
+    const isCustom = update.category === "kanike" ? true : body.isCustom === true;
+    if (isCustom) {
       update.price = null;
     } else {
       const price = Number(body?.price);
@@ -27,6 +43,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       }
       update.price = price;
     }
+  } else if (update.category === "kanike") {
+    update.price = null;
   }
 
   if (body?.active !== undefined) {

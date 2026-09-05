@@ -1,21 +1,19 @@
-import type { Content } from "pdfmake/interfaces";
-
 import { connectToDatabase } from "@/lib/mongodb";
 import { ReceiptModel } from "@/models/Receipt";
 import { getOrCreateSettings } from "@/lib/settings";
 import { formatBusinessDate } from "@/lib/date";
+import { displaySevaName } from "@/lib/dto";
 import {
-  buildReportDocDefinition,
-  buildReportHeader,
+  buildReportDocument,
+  escapeHtml,
   formatReportAmount,
   groupReceiptsByDate,
-  renderReportPdf,
+  renderHtmlToPdf,
   reportPdfResponse,
-  reportTableLayout,
   resolveReportPeriod,
 } from "@/lib/pdf-report";
 
-type SevaTotal = { name: string; qty: number; amount: number };
+type SevaTotal = { sevaName: string; sevaNameEn: string | null; qty: number; amount: number };
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -33,14 +31,7 @@ export async function GET(request: Request) {
 
   const groupsByDate = groupReceiptsByDate(receipts);
 
-  const tableBody: Content[][] = [
-    [
-      { text: "NAME", bold: true },
-      { text: "QTY", bold: true, alignment: "right" },
-      { text: "AMOUNT", bold: true, alignment: "right" },
-    ],
-  ];
-
+  let rowsHtml = "";
   let grandTotal = 0;
 
   for (const [businessDate, group] of groupsByDate) {
@@ -53,62 +44,65 @@ export async function GET(request: Request) {
     const sevaTotals = new Map<string, SevaTotal>();
     for (const receipt of group) {
       for (const item of receipt.items) {
-        const key = item.sevaId.toString();
+        const enKey = (item.sevaNameEn ?? "").trim();
+        const key = `${item.sevaId.toString()}::${enKey}`;
         const existing = sevaTotals.get(key);
         if (existing) {
           existing.qty += item.quantity;
           existing.amount += item.amount;
         } else {
-          sevaTotals.set(key, { name: item.sevaName, qty: item.quantity, amount: item.amount });
+          sevaTotals.set(key, {
+            sevaName: item.sevaName,
+            sevaNameEn: enKey.length > 0 ? enKey : null,
+            qty: item.quantity,
+            amount: item.amount,
+          });
         }
       }
     }
 
-    const sortedSevas = [...sevaTotals.values()].sort((a, b) => a.name.localeCompare(b.name));
+    const sortedSevas = [...sevaTotals.values()].sort((a, b) =>
+      displaySevaName(a).localeCompare(displaySevaName(b)),
+    );
 
-    tableBody.push([
-      {
-        text: `${formatBusinessDate(businessDate)}   R.No ${startGbn} - ${endGbn}`,
-        bold: true,
-        fillColor: "#f0f0f0",
-      },
-      { text: "", fillColor: "#f0f0f0" },
-      { text: "", fillColor: "#f0f0f0" },
-    ]);
+    rowsHtml += `<tr class="group-header">
+      <td>${escapeHtml(`${formatBusinessDate(businessDate)}   R.No ${startGbn} - ${endGbn}`)}</td>
+      <td></td>
+      <td></td>
+    </tr>`;
 
     for (const seva of sortedSevas) {
-      tableBody.push([
-        seva.name,
-        { text: String(seva.qty), alignment: "right" },
-        { text: formatReportAmount(seva.amount), alignment: "right" },
-      ]);
+      rowsHtml += `<tr>
+        <td>${escapeHtml(displaySevaName(seva))}</td>
+        <td class="qty">${seva.qty}</td>
+        <td class="amount">${formatReportAmount(seva.amount)}</td>
+      </tr>`;
     }
 
-    tableBody.push([
-      { text: "Total", bold: true },
-      "",
-      { text: formatReportAmount(dayTotal), bold: true, alignment: "right" },
-    ]);
+    rowsHtml += `<tr class="total">
+      <td>Total</td>
+      <td></td>
+      <td class="amount">${formatReportAmount(dayTotal)}</td>
+    </tr>`;
   }
 
-  tableBody.push([
-    { text: "GRAND TOTAL", bold: true, fontSize: 11 },
-    "",
-    { text: formatReportAmount(grandTotal), bold: true, fontSize: 11, alignment: "right" },
-  ]);
+  rowsHtml += `<tr class="grand-total">
+    <td>GRAND TOTAL</td>
+    <td></td>
+    <td class="amount">${formatReportAmount(grandTotal)}</td>
+  </tr>`;
 
-  const docDefinition = buildReportDocDefinition([
-    ...buildReportHeader(settings, period.title),
-    {
-      table: {
-        headerRows: 1,
-        widths: ["*", 50, 80],
-        body: tableBody,
-      },
-      layout: reportTableLayout,
-    },
-  ]);
+  const html = buildReportDocument({
+    templeSettings: { name: settings.name, place: settings.place, phone: settings.phone },
+    title: period.title,
+    columns: [
+      { label: "NAME" },
+      { label: "QTY", align: "center", width: "15%" },
+      { label: "AMOUNT", align: "right", width: "20%" },
+    ],
+    rowsHtml,
+  });
 
-  const buffer = await renderReportPdf(docDefinition);
+  const buffer = await renderHtmlToPdf(html);
   return reportPdfResponse(buffer, `seva-report-${period.filenameSuffix}.pdf`);
 }

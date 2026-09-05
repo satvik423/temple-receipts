@@ -3,7 +3,6 @@
 import * as React from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ChevronLeft, ChevronRight, Printer } from "lucide-react";
-import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,10 +16,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { HistoryReportDialog } from "@/components/history-report-dialog";
+import { ReceiptDocument } from "@/components/receipt-document";
 import { formatCurrency } from "@/lib/format";
 import { formatReceiptDate, formatReceiptTime, shiftBusinessDate } from "@/lib/date";
-import { PrinterNotConnectedError, printReceiptToUsb } from "@/lib/thermal-printer";
+import { printReceiptToUsb } from "@/lib/thermal-printer";
 import type { ReceiptDTO } from "@/lib/dto";
+import { displaySevaName } from "@/lib/dto";
 
 export function HistoryView({
   receipts,
@@ -39,17 +40,29 @@ export function HistoryView({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [reprintingId, setReprintingId] = React.useState<string | null>(null);
+  const [browserPrintReceipt, setBrowserPrintReceipt] = React.useState<ReceiptDTO | null>(null);
+
+  React.useEffect(() => {
+    if (!browserPrintReceipt) return;
+    const timer = setTimeout(() => window.print(), 150);
+    return () => clearTimeout(timer);
+  }, [browserPrintReceipt]);
+
+  React.useEffect(() => {
+    function handleAfterPrint() {
+      setBrowserPrintReceipt(null);
+    }
+    window.addEventListener("afterprint", handleAfterPrint);
+    return () => window.removeEventListener("afterprint", handleAfterPrint);
+  }, []);
 
   async function handleReprint(receipt: ReceiptDTO) {
     setReprintingId(receipt.id);
     try {
       await printReceiptToUsb(receipt, templeSettings, true);
     } catch (err) {
-      if (err instanceof PrinterNotConnectedError) {
-        toast.error("No printer connected. Connect one in Settings.");
-      } else {
-        toast.error("Could not print. Check the printer connection.");
-      }
+      console.warn("USB print failed, falling back to browser print:", err);
+      setBrowserPrintReceipt(receipt);
     } finally {
       setReprintingId(null);
     }
@@ -68,27 +81,23 @@ export function HistoryView({
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3 print:hidden">
         <h1 className="text-lg font-semibold">Sales History</h1>
         <div className="flex items-center gap-2">
           <HistoryReportDialog
             today={today}
-            endpoint="/api/receipts/report/bill"
-            triggerLabel="Bill"
-            dialogTitle="Download Bill Report"
-            description="Includes every bill's line items, grouped by date."
+            format="pdf"
+            triggerLabel="PDF"
           />
           <HistoryReportDialog
             today={today}
-            endpoint="/api/receipts/report/summary"
-            triggerLabel="Report"
-            dialogTitle="Download Report"
-            description="Includes seva-wise totals per date, across all recorded sales."
+            format="xlsx"
+            triggerLabel="Excel"
           />
         </div>
       </div>
 
-      <Card>
+      <Card className="print:hidden">
         <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <CardTitle className="text-base">
             {receipts.length} {receipts.length === 1 ? "Receipt" : "Receipts"} ·{" "}
@@ -156,7 +165,7 @@ export function HistoryView({
                         <TableCell>{formatReceiptDate(createdAt)}</TableCell>
                         <TableCell>{formatReceiptTime(createdAt)}</TableCell>
                         <TableCell className="max-w-[240px] truncate text-muted-foreground">
-                          {receipt.items.map((item) => item.sevaName).join(", ")}
+                          {receipt.items.map((item) => displaySevaName(item)).join(", ")}
                         </TableCell>
                         <TableCell className="text-right font-medium">
                           {formatCurrency(receipt.total)}
@@ -181,6 +190,12 @@ export function HistoryView({
           )}
         </CardContent>
       </Card>
+
+      {browserPrintReceipt ? (
+        <div className="hidden print:block">
+          <ReceiptDocument receipt={browserPrintReceipt} templeSettings={templeSettings} isCopy />
+        </div>
+      ) : null}
     </div>
   );
 }

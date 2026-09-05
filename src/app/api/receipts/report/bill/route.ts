@@ -1,17 +1,15 @@
-import type { Content } from "pdfmake/interfaces";
-
 import { connectToDatabase } from "@/lib/mongodb";
 import { ReceiptModel } from "@/models/Receipt";
 import { getOrCreateSettings } from "@/lib/settings";
 import { formatBusinessDate } from "@/lib/date";
+import { displaySevaName } from "@/lib/dto";
 import {
-  buildReportDocDefinition,
-  buildReportHeader,
+  buildReportDocument,
+  escapeHtml,
   formatReportAmount,
   groupReceiptsByDate,
-  renderReportPdf,
+  renderHtmlToPdf,
   reportPdfResponse,
-  reportTableLayout,
   resolveReportPeriod,
 } from "@/lib/pdf-report";
 
@@ -31,16 +29,7 @@ export async function GET(request: Request) {
 
   const groupsByDate = groupReceiptsByDate(receipts);
 
-  const tableBody: Content[][] = [
-    [
-      { text: "GBN", bold: true },
-      { text: "DBN", bold: true },
-      { text: "NAME", bold: true },
-      { text: "QTY", bold: true, alignment: "right" },
-      { text: "AMOUNT", bold: true, alignment: "right" },
-    ],
-  ];
-
+  let rowsHtml = "";
   let grandTotal = 0;
 
   for (const [businessDate, group] of groupsByDate) {
@@ -50,59 +39,56 @@ export async function GET(request: Request) {
     const dayTotal = group.reduce((sum, r) => sum + r.total, 0);
     grandTotal += dayTotal;
 
-    tableBody.push([
-      { text: "", fillColor: "#f0f0f0" },
-      { text: "", fillColor: "#f0f0f0" },
-      {
-        text: `${formatBusinessDate(businessDate)}   R.No ${startGbn} - ${endGbn}`,
-        bold: true,
-        fillColor: "#f0f0f0",
-      },
-      { text: "", fillColor: "#f0f0f0" },
-      { text: "", fillColor: "#f0f0f0" },
-    ]);
+    rowsHtml += `<tr class="group-header">
+      <td></td>
+      <td></td>
+      <td>${escapeHtml(`${formatBusinessDate(businessDate)}   R.No ${startGbn} - ${endGbn}`)}</td>
+      <td></td>
+      <td></td>
+    </tr>`;
 
     for (const receipt of group) {
       for (const item of receipt.items) {
-        tableBody.push([
-          String(receipt.receiptNo),
-          String(receipt.dbn),
-          item.sevaName,
-          { text: String(item.quantity), alignment: "right" },
-          { text: formatReportAmount(item.amount), alignment: "right" },
-        ]);
+        rowsHtml += `<tr>
+          <td>${receipt.receiptNo}</td>
+          <td>${receipt.dbn}</td>
+          <td>${escapeHtml(displaySevaName(item))}</td>
+          <td class="qty">${item.quantity}</td>
+          <td class="amount">${formatReportAmount(item.amount)}</td>
+        </tr>`;
       }
     }
 
-    tableBody.push([
-      "",
-      "",
-      { text: "TOTAL", bold: true },
-      "",
-      { text: formatReportAmount(dayTotal), bold: true, alignment: "right" },
-    ]);
+    rowsHtml += `<tr class="total">
+      <td></td>
+      <td></td>
+      <td>TOTAL</td>
+      <td></td>
+      <td class="amount">${formatReportAmount(dayTotal)}</td>
+    </tr>`;
   }
 
-  tableBody.push([
-    "",
-    "",
-    { text: "GRAND TOTAL", bold: true, fontSize: 11 },
-    "",
-    { text: formatReportAmount(grandTotal), bold: true, fontSize: 11, alignment: "right" },
-  ]);
+  rowsHtml += `<tr class="grand-total">
+    <td></td>
+    <td></td>
+    <td>GRAND TOTAL</td>
+    <td></td>
+    <td class="amount">${formatReportAmount(grandTotal)}</td>
+  </tr>`;
 
-  const docDefinition = buildReportDocDefinition([
-    ...buildReportHeader(settings, period.title),
-    {
-      table: {
-        headerRows: 1,
-        widths: [45, 40, "*", 40, 75],
-        body: tableBody,
-      },
-      layout: reportTableLayout,
-    },
-  ]);
+  const html = buildReportDocument({
+    templeSettings: { name: settings.name, place: settings.place, phone: settings.phone },
+    title: period.title,
+    columns: [
+      { label: "GBN", width: "12%" },
+      { label: "DBN", width: "12%" },
+      { label: "NAME" },
+      { label: "QTY", align: "center", width: "10%" },
+      { label: "AMOUNT", align: "right", width: "18%" },
+    ],
+    rowsHtml,
+  });
 
-  const buffer = await renderReportPdf(docDefinition);
+  const buffer = await renderHtmlToPdf(html);
   return reportPdfResponse(buffer, `bill-report-${period.filenameSuffix}.pdf`);
 }

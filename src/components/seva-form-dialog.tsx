@@ -57,10 +57,14 @@ function SevaForm({
 }) {
   const isEdit = Boolean(seva);
   const [name, setName] = React.useState(seva?.name ?? "");
+  const [nameEn, setNameEn] = React.useState(seva?.nameEn ?? "");
+  const [category, setCategory] = React.useState<"seva" | "kanike">(seva?.category ?? "seva");
   const [isCustom, setIsCustom] = React.useState(seva ? seva.price === null : false);
   const [price, setPrice] = React.useState(seva?.price != null ? String(seva.price) : "");
   const [error, setError] = React.useState<string | null>(null);
   const [submitting, setSubmitting] = React.useState(false);
+
+  const effectiveIsCustom = category === "kanike" ? true : isCustom;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -68,7 +72,13 @@ function SevaForm({
     setSubmitting(true);
 
     try {
-      const payload = { name, isCustom, price: isCustom ? null : Number(price) };
+      const payload = {
+        name,
+        nameEn,
+        category,
+        isCustom: effectiveIsCustom,
+        price: effectiveIsCustom ? null : Number(price),
+      };
       const url = isEdit ? `/api/sevas/${seva!.id}` : "/api/sevas";
       const method = isEdit ? "PATCH" : "POST";
 
@@ -92,7 +102,7 @@ function SevaForm({
     }
   }
 
-  const canSubmit = name.trim().length > 0 && (isCustom || price.trim().length > 0);
+  const canSubmit = name.trim().length > 0 && (effectiveIsCustom || price.trim().length > 0);
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -101,17 +111,56 @@ function SevaForm({
         <Input id="seva-name" value={name} onChange={(e) => setName(e.target.value)} autoFocus />
       </div>
 
-      <div className="flex items-center justify-between rounded-md border p-3">
-        <div>
-          <p className="text-sm font-medium">Custom price</p>
-          <p className="text-xs text-muted-foreground">
-            Ask amount, name &amp; phone at sale time
-          </p>
-        </div>
-        <Switch checked={isCustom} onCheckedChange={setIsCustom} />
+      <div className="space-y-2">
+        <Label htmlFor="seva-name-en">
+          Name in English <span className="text-muted-foreground">(optional)</span>
+        </Label>
+        <Input
+          id="seva-name-en"
+          value={nameEn}
+          onChange={(e) => setNameEn(e.target.value)}
+        />
       </div>
 
-      {!isCustom ? (
+      <div className="space-y-2">
+        <Label>Type</Label>
+        <div className="flex gap-2">
+          <Button
+            type="button"
+            variant={category === "seva" ? "default" : "outline"}
+            className="flex-1"
+            onClick={() => setCategory("seva")}
+          >
+            Seva
+          </Button>
+          <Button
+            type="button"
+            variant={category === "kanike" ? "default" : "outline"}
+            className="flex-1"
+            onClick={() => setCategory("kanike")}
+          >
+            Kanike
+          </Button>
+        </div>
+      </div>
+
+      {category === "kanike" ? (
+        <p className="rounded-md border p-3 text-xs text-muted-foreground">
+          Kanike amounts are always entered fresh at sale time — no price to set here.
+        </p>
+      ) : (
+        <div className="flex items-center justify-between rounded-md border p-3">
+          <div>
+            <p className="text-sm font-medium">Custom price</p>
+            <p className="text-xs text-muted-foreground">
+              Ask amount, name &amp; phone at sale time
+            </p>
+          </div>
+          <Switch checked={isCustom} onCheckedChange={setIsCustom} />
+        </div>
+      )}
+
+      {category === "seva" && !isCustom ? (
         <div className="space-y-2">
           <Label htmlFor="seva-price">Price (₹)</Label>
           <Input

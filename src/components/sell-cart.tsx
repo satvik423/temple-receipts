@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Minus, Plus, Printer, Search, X } from "lucide-react";
+import { Minus, Plus, Printer, Search, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -9,12 +9,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { CustomSevaDialog, type CustomSevaSubmission } from "@/components/custom-seva-dialog";
 import { PrinterConnectButton } from "@/components/printer-connect-button";
+import { ReceiptDocument } from "@/components/receipt-document";
 import { formatCurrency } from "@/lib/format";
-import {
-  PrinterNotConnectedError,
-  getAuthorizedPrinter,
-  printReceiptToUsb,
-} from "@/lib/thermal-printer";
+import { getAuthorizedPrinter, printReceiptToUsb } from "@/lib/thermal-printer";
 import type { ReceiptDTO, SevaDTO } from "@/lib/dto";
 
 type CartLine = {
@@ -40,12 +37,30 @@ export function SellCart({
   const [customSeva, setCustomSeva] = React.useState<SevaDTO | null>(null);
   const [submitting, setSubmitting] = React.useState(false);
   const [query, setQuery] = React.useState("");
-  const [lastReceipt, setLastReceipt] = React.useState<ReceiptDTO | null>(null);
+  const [printReceipt, setPrintReceipt] = React.useState<ReceiptDTO | null>(null);
   const [printing, setPrinting] = React.useState(false);
   const [printerConnected, setPrinterConnected] = React.useState(true);
+  const [browserPrintJob, setBrowserPrintJob] = React.useState<{
+    receipt: ReceiptDTO;
+    isCopy: boolean;
+  } | null>(null);
 
   React.useEffect(() => {
     getAuthorizedPrinter().then((device) => setPrinterConnected(device !== null));
+  }, []);
+
+  React.useEffect(() => {
+    if (!browserPrintJob) return;
+    const timer = setTimeout(() => window.print(), 150);
+    return () => clearTimeout(timer);
+  }, [browserPrintJob]);
+
+  React.useEffect(() => {
+    function handleAfterPrint() {
+      setBrowserPrintJob(null);
+    }
+    window.addEventListener("afterprint", handleAfterPrint);
+    return () => window.removeEventListener("afterprint", handleAfterPrint);
   }, []);
 
   const filteredSevas = query.trim()
@@ -125,11 +140,8 @@ export function SellCart({
     try {
       await printReceiptToUsb(receipt, templeSettings, isCopy);
     } catch (err) {
-      if (err instanceof PrinterNotConnectedError) {
-        toast.error("No printer connected. Connect one in Settings.");
-      } else {
-        toast.error("Could not print. Check the printer connection.");
-      }
+      console.warn("USB print failed, falling back to browser print:", err);
+      setBrowserPrintJob({ receipt, isCopy });
     } finally {
       setPrinting(false);
     }
@@ -160,7 +172,7 @@ export function SellCart({
       }
 
       setCart([]);
-      setLastReceipt(data);
+      setPrintReceipt(data);
       toast.success(`Bill #${data.receiptNo} saved`);
       await printBill(data);
     } finally {
@@ -169,9 +181,9 @@ export function SellCart({
   }
 
   return (
-    <div className="space-y-4 pb-24">
+    <div className="space-y-4 pb-24 lg:pb-0">
       {!printerConnected ? (
-        <Card className="border-destructive/50">
+        <Card className="border-destructive/50 print:hidden">
           <CardContent className="flex flex-wrap items-center justify-between gap-3 pt-6">
             <p className="text-sm text-muted-foreground">
               No printer connected — bills will be saved but won&apos;t print until you connect one.
@@ -181,9 +193,159 @@ export function SellCart({
         </Card>
       ) : null}
 
-      <Card>
+      <div className="lg:grid lg:grid-cols-[1fr_360px] lg:gap-4">
+        <Card className="hidden print:hidden lg:block">
+          <CardHeader>
+            <CardTitle className="text-base">Sevas</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {sevas.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                No active sevas yet. Add some from the Sevas page.
+              </p>
+            ) : (
+              <>
+                <div className="relative">
+                  <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    placeholder="Search sevas..."
+                    className="pl-8"
+                  />
+                  {query ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      aria-label="Clear search"
+                      className="absolute top-1/2 right-1 size-6 -translate-y-1/2"
+                      onClick={() => setQuery("")}
+                    >
+                      <X className="size-3.5" />
+                    </Button>
+                  ) : null}
+                </div>
+
+                {filteredSevas.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No sevas match &quot;{query}&quot;.</p>
+                ) : (
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
+                    {filteredSevas.map((seva) => (
+                      <button
+                        key={seva.id}
+                        type="button"
+                        onClick={() =>
+                          seva.price === null ? setCustomSeva(seva) : addFixedSeva(seva)
+                        }
+                        className="flex flex-col items-start gap-1 rounded-lg border p-3 text-left transition-colors hover:bg-secondary/60"
+                      >
+                        <span className="text-lg font-bold">{seva.name}</span>
+                        <span className="text-base font-bold text-muted-foreground">
+                          {seva.price === null ? "Custom amount" : formatCurrency(seva.price)}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="hidden lg:sticky lg:top-20 lg:self-start lg:block">
+          <CardHeader>
+            <CardTitle className="text-base">Cart</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {cart.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No items yet. Tap a seva to add it.</p>
+            ) : (
+              <div className="space-y-3">
+                {cart.map((line) => (
+                  <div key={line.key} className="flex items-start justify-between gap-2 text-sm">
+                    <div className="min-w-0">
+                      <p className="truncate font-medium">{line.sevaName}</p>
+                      {line.isCustom ? (
+                        <p className="truncate text-xs text-muted-foreground">
+                          {line.bhaktaName}
+                          {line.bhaktaPhone ? ` · ${line.bhaktaPhone}` : null}
+                        </p>
+                      ) : (
+                        <div className="mt-1 flex items-center gap-1.5">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            className="size-6"
+                            onClick={() => updateQuantity(line.key, -1)}
+                          >
+                            <Minus className="size-3" />
+                          </Button>
+                          <span className="w-5 text-center text-xs">{line.quantity}</span>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            className="size-6"
+                            onClick={() => updateQuantity(line.key, 1)}
+                          >
+                            <Plus className="size-3" />
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <span className="font-medium">{formatCurrency(line.amount)}</span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="size-6 text-muted-foreground hover:text-destructive"
+                        aria-label={`Remove ${line.sevaName}`}
+                        onClick={() => removeLine(line.key)}
+                      >
+                        <Trash2 className="size-3.5" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+
+                <div className="flex items-center justify-between border-t pt-3 text-base font-semibold">
+                  <span>Total</span>
+                  <span>{formatCurrency(total)}</span>
+                </div>
+              </div>
+            )}
+
+            {printReceipt ? (
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                disabled={printing}
+                aria-label={`Print bill ${printReceipt.receiptNo} again`}
+                onClick={() => printBill(printReceipt)}
+              >
+                <Printer className="size-4" />
+                Print Again
+              </Button>
+            ) : null}
+
+            <Button
+              className="w-full"
+              disabled={cart.length === 0 || submitting}
+              onClick={handleCheckout}
+            >
+              {submitting ? "Saving..." : "Save & Print"}
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card className="print:hidden lg:hidden">
         <CardHeader>
-          <CardTitle className="text-base">Sell</CardTitle>
+          <CardTitle className="text-base">Seva</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           {sevas.length === 0 ? (
@@ -233,8 +395,8 @@ export function SellCart({
                       <div key={seva.id} className="p-3">
                         <div className="flex flex-wrap items-center gap-3">
                           <div className="min-w-0 flex-1 basis-40">
-                            <p className="truncate font-medium">{seva.name}</p>
-                            <p className="text-sm text-muted-foreground">
+                            <p className="truncate text-lg font-bold">{seva.name}</p>
+                            <p className="text-base font-bold text-muted-foreground">
                               {isCustomSeva ? "Custom amount" : formatCurrency(seva.price!)}
                             </p>
                           </div>
@@ -283,7 +445,8 @@ export function SellCart({
                                 className="flex items-center justify-between gap-2 text-sm"
                               >
                                 <span className="min-w-0 truncate text-muted-foreground">
-                                  {entry.bhaktaName} · {entry.bhaktaPhone}
+                                  {entry.bhaktaName}
+                                  {entry.bhaktaPhone ? ` · ${entry.bhaktaPhone}` : null}
                                 </span>
                                 <div className="flex shrink-0 items-center gap-2">
                                   <span className="font-medium">{formatCurrency(entry.amount)}</span>
@@ -312,20 +475,20 @@ export function SellCart({
         </CardContent>
       </Card>
 
-      <div className="fixed inset-x-0 bottom-0 z-10 border-t bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
-        <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-3 py-3 sm:px-6">
+      <div className="fixed inset-x-0 bottom-0 z-10 border-t bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60 print:hidden lg:hidden">
+        <div className="flex w-full items-center justify-between gap-3 px-3 py-3 sm:px-6">
           <div>
             <p className="text-xs text-muted-foreground">Total</p>
             <p className="text-lg font-semibold">{formatCurrency(total)}</p>
           </div>
           <div className="flex items-center gap-2">
-            {lastReceipt ? (
+            {printReceipt ? (
               <Button
                 type="button"
                 variant="outline"
                 disabled={printing}
-                aria-label={`Print bill ${lastReceipt.receiptNo} again`}
-                onClick={() => printBill(lastReceipt)}
+                aria-label={`Print bill ${printReceipt.receiptNo} again`}
+                onClick={() => printBill(printReceipt)}
               >
                 <Printer className="size-4" />
                 Print Again
@@ -345,6 +508,16 @@ export function SellCart({
           if (customSeva) addCustomSeva(customSeva, submission);
         }}
       />
+
+      {browserPrintJob ? (
+        <div className="hidden print:block">
+          <ReceiptDocument
+            receipt={browserPrintJob.receipt}
+            templeSettings={templeSettings}
+            isCopy={browserPrintJob.isCopy}
+          />
+        </div>
+      ) : null}
     </div>
   );
 }

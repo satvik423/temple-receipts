@@ -12,7 +12,10 @@ export async function GET() {
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
   const name = typeof body?.name === "string" ? body.name.trim() : "";
-  const isCustom = body?.isCustom === true;
+  const rawNameEn = typeof body?.nameEn === "string" ? body.nameEn.trim() : "";
+  const nameEn = rawNameEn.length > 0 ? rawNameEn : null;
+  const category = body?.category === "kanike" ? "kanike" : "seva";
+  const isCustom = category === "kanike" ? true : body?.isCustom === true;
   const price = isCustom ? null : Number(body?.price);
 
   if (!name) {
@@ -25,6 +28,6 @@ export async function POST(request: Request) {
   await connectToDatabase();
   const lastSeva = await SevaModel.findOne().sort({ order: -1 });
   const order = (lastSeva?.order ?? -1) + 1;
-  const seva = await SevaModel.create({ name, price, active: true, order });
+  const seva = await SevaModel.create({ name, nameEn, price, active: true, order, category });
   return NextResponse.json(toSevaDTO(seva), { status: 201 });
 }

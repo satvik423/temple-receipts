@@ -1,3 +1,4 @@
+import { requireAdmin } from "@/lib/auth";
 import { connectToDatabase } from "@/lib/mongodb";
 import { getBusinessDate } from "@/lib/date";
 import {
@@ -24,6 +25,8 @@ export default async function AnalyticsPage({
 }: {
   searchParams: Promise<{ range?: string; offset?: string }>;
 }) {
+  await requireAdmin("/analytics");
+
   const { range: rangeParam, offset: offsetParam } = await searchParams;
   const range: RevenueRange = REVENUE_RANGES.includes(rangeParam as RevenueRange)
     ? (rangeParam as RevenueRange)

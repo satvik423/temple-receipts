@@ -3,9 +3,11 @@ import mongoose, { Schema, type InferSchemaType } from "mongoose";
 const SevaSchema = new Schema(
   {
     name: { type: String, required: true, trim: true },
+    nameEn: { type: String, default: null, trim: true },
     price: { type: Number, default: null, min: 0 },
     active: { type: Boolean, default: true },
     order: { type: Number, default: 0 },
+    category: { type: String, enum: ["seva", "kanike"], default: "seva" },
   },
   { timestamps: true },
 );

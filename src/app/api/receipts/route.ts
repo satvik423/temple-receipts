@@ -12,6 +12,7 @@ type IncomingItem = {
   amount?: number;
   bhaktaName?: string;
   bhaktaPhone?: string;
+  remark?: string;
 };
 
 export async function POST(request: Request) {
@@ -46,6 +47,7 @@ export async function POST(request: Request) {
       const amount = Number(incoming.amount);
       const bhaktaName = incoming.bhaktaName?.trim();
       const bhaktaPhone = incoming.bhaktaPhone?.trim();
+      const remark = incoming.remark?.trim() || undefined;
 
       if (!Number.isFinite(amount) || amount <= 0) {
         return NextResponse.json(
@@ -53,9 +55,9 @@ export async function POST(request: Request) {
           { status: 400 },
         );
       }
-      if (!bhaktaName || !bhaktaPhone) {
+      if (!bhaktaName) {
         return NextResponse.json(
-          { error: `Name and phone are required for ${seva.name}` },
+          { error: `Name is required for ${seva.name}` },
           { status: 400 },
         );
       }
@@ -63,12 +65,15 @@ export async function POST(request: Request) {
       items.push({
         sevaId: seva._id,
         sevaName: seva.name,
+        sevaNameEn: seva.nameEn ?? undefined,
         quantity: 1,
         unitPrice: amount,
         amount,
         isCustom: true,
         bhaktaName,
         bhaktaPhone,
+        isKanike: seva.category === "kanike",
+        remark,
       });
       total += amount;
     } else {
@@ -84,10 +89,12 @@ export async function POST(request: Request) {
       items.push({
         sevaId: seva._id,
         sevaName: seva.name,
+        sevaNameEn: seva.nameEn ?? undefined,
         quantity,
         unitPrice: seva.price!,
         amount,
         isCustom: false,
+        isKanike: false,
       });
       total += amount;
     }

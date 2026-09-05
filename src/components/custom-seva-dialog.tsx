@@ -61,10 +61,7 @@ function CustomSevaForm({
     onOpenChange(false);
   }
 
-  const canSubmit =
-    bhaktaName.trim().length > 0 &&
-    bhaktaPhone.trim().length > 0 &&
-    Number(amount) > 0;
+  const canSubmit = bhaktaName.trim().length > 0 && Number(amount) > 0;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -78,7 +75,9 @@ function CustomSevaForm({
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="bhakta-phone">Phone Number</Label>
+        <Label htmlFor="bhakta-phone">
+          Phone Number <span className="text-muted-foreground">(optional)</span>
+        </Label>
         <Input
           id="bhakta-phone"
           type="tel"

@@ -1,3 +1,4 @@
+import * as React from "react";
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
@@ -5,6 +6,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Nav } from "@/components/nav";
 import { Toaster } from "@/components/ui/sonner";
+import { getCurrentUser } from "@/lib/auth";
 import { getOrCreateSettings } from "@/lib/settings";
 
 const geistSans = Geist({
@@ -34,7 +36,10 @@ export const viewport: Viewport = {
 };
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
-  const settings = await getOrCreateSettings();
+  const [settings, user] = await Promise.all([
+    getOrCreateSettings(),
+    getCurrentUser(),
+  ]);
 
   return (
     <html
@@ -49,8 +54,8 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
           enableSystem
           disableTransitionOnChange
         >
-          <Nav templeName={settings.name} />
-          <main className="mx-auto w-full max-w-6xl flex-1 px-3 py-4 sm:px-6 sm:py-6 print:max-w-none print:p-0">
+          <Nav templeName={settings.name} user={user} />
+          <main className="w-full flex-1 px-3 py-4 sm:px-6 sm:py-6 print:p-0">
             {children}
           </main>
           <div className="print:hidden">

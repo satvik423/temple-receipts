@@ -153,7 +153,7 @@ export function SevaManager({ sevas: initialSevas }: { sevas: SevaDTO[] }) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold">Sevas</h1>
+        <h1 className="text-lg font-semibold">Add Seva</h1>
         <Button onClick={() => setCreateOpen(true)}>
           <Plus className="size-4" />
           Add Seva
@@ -197,7 +197,9 @@ export function SevaManager({ sevas: initialSevas }: { sevas: SevaDTO[] }) {
                   <div className="min-w-0 flex-1 basis-40">
                     <p className="truncate font-medium">{seva.name}</p>
                     <p className="text-sm text-muted-foreground">
-                      {seva.price === null ? (
+                      {seva.category === "kanike" ? (
+                        <Badge>Kanike</Badge>
+                      ) : seva.price === null ? (
                         <Badge variant="secondary">Custom</Badge>
                       ) : (
                         formatCurrency(seva.price)
@@ -264,7 +266,7 @@ export function SevaManager({ sevas: initialSevas }: { sevas: SevaDTO[] }) {
             <AlertDialogDescription>
               This can&apos;t be undone. Past receipts already keep their own copy of this
               seva&apos;s name and price, so history stays intact — but it will be removed from
-              your seva list and the Sell page.
+              your seva list and the Seva page.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

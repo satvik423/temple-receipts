@@ -23,12 +23,12 @@ export default function Error({
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            The page hit an unexpected error. You can try again, or head back to Sell.
+            The page hit an unexpected error. You can try again, or head back to Seva.
           </p>
           <div className="flex gap-2">
             <Button onClick={() => reset()}>Try Again</Button>
             <Button variant="outline" asChild>
-              <a href="/sell">Go to Sell</a>
+              <a href="/sell">Go to Seva</a>
             </Button>
           </div>
         </CardContent>

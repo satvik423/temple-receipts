@@ -1,0 +1,72 @@
+.receipt {
+  width: 148mm;
+  min-height: 210mm;
+  margin: 0 auto;
+  padding: 14mm 12mm;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  font-family: "Noto Sans Kannada", "Noto Sans", sans-serif;
+  font-size: 15px;
+  line-height: 1.7;
+  color: #000;
+  background: #fff;
+}
+
+.center {
+  text-align: center;
+}
+
+.center p {
+  margin: 0;
+}
+
+.templeName {
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.separator {
+  border-top: 1px solid #000;
+  margin: 5mm 0;
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-weight: bold;
+  margin-bottom: 6mm;
+}
+
+.field {
+  margin-bottom: 4mm;
+  font-weight: bold;
+}
+
+.footer {
+  margin-top: auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding-top: 24mm;
+  font-weight: bold;
+}
+
+.signature {
+  border-top: 1px solid #000;
+  padding-top: 2mm;
+}
+
+@media print {
+  @page {
+    size: A5;
+    margin: 0;
+  }
+
+  html,
+  body {
+    margin: 0;
+    padding: 0;
+  }
+}
