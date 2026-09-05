@@ -155,31 +155,11 @@ function renderReceiptCanvas(
   }
 
   function dashedLine() {
-    y += 6;
-    ctx.save();
-    ctx.strokeStyle = "#000";
-    ctx.lineWidth = 2;
-    ctx.setLineDash([6, 6]);
-    ctx.beginPath();
-    ctx.moveTo(PAD, y);
-    ctx.lineTo(width - PAD, y);
-    ctx.stroke();
-    ctx.restore();
-    y += 20;
+    y += 26;
   }
 
   function solidLine() {
-    y += 4;
-    ctx.save();
-    ctx.strokeStyle = "#000";
-    ctx.lineWidth = 2;
-    ctx.setLineDash([]);
-    ctx.beginPath();
-    ctx.moveTo(PAD, y);
-    ctx.lineTo(width - PAD, y);
-    ctx.stroke();
-    ctx.restore();
-    y += 16;
+    y += 20;
   }
 
   function twoCol(left: string, right: string, size = FONT_NORMAL) {
