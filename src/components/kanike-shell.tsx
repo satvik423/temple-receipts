@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { ChevronLeft, ChevronRight, Pencil, Printer } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -10,34 +10,24 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { KanikeEditDialog } from "@/components/kanike-edit-dialog";
 import { KanikeReceiptDocument } from "@/components/kanike-receipt-document";
-import { formatCurrency } from "@/lib/format";
-import { formatReceiptDate, formatReceiptTime, shiftBusinessDate } from "@/lib/date";
+import { shiftBusinessDate } from "@/lib/date";
 import { displaySevaName, type KanikeRowDTO, type SevaDTO, type TempleHeaderDTO } from "@/lib/dto";
 
 const LAST_TYPE_STORAGE_KEY = "kanike:lastTypeId";
 
-export function KanikeView({
+export function KanikeShell({
   kanikeTypes,
-  rows,
   date,
   today,
   templeSettings,
+  children,
 }: {
   kanikeTypes: SevaDTO[];
-  rows: KanikeRowDTO[];
   date: string;
   today: string;
   templeSettings: TempleHeaderDTO;
+  children: React.ReactNode;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -52,7 +42,6 @@ export function KanikeView({
   const [selectedTypeId, setSelectedTypeId] = React.useState<string | null>(null);
   const [submitting, setSubmitting] = React.useState(false);
   const [printJob, setPrintJob] = React.useState<KanikeRowDTO | null>(null);
-  const [editingRow, setEditingRow] = React.useState<KanikeRowDTO | null>(null);
 
   React.useEffect(() => {
     Promise.resolve().then(() => {
@@ -314,84 +303,8 @@ export function KanikeView({
             ) : null}
           </div>
         </CardHeader>
-        <CardContent>
-          {rows.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No kanike sold for this date.</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>GBN</TableHead>
-                    <TableHead>Bill No</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Time</TableHead>
-                    <TableHead>Bhakta Name</TableHead>
-                    <TableHead>Phone</TableHead>
-                    <TableHead>Address</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Remark</TableHead>
-                    <TableHead>Payment</TableHead>
-                    <TableHead className="text-right">Amount</TableHead>
-                    <TableHead className="text-right">Action</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {rows.map((row) => {
-                    const createdAt = new Date(row.createdAt);
-                    return (
-                      <TableRow key={row.id}>
-                        <TableCell className="font-medium">#{row.receiptNo}</TableCell>
-                        <TableCell className="font-medium">#{row.dbn}</TableCell>
-                        <TableCell>{formatReceiptDate(createdAt)}</TableCell>
-                        <TableCell>{formatReceiptTime(createdAt)}</TableCell>
-                        <TableCell>{row.bhaktaName}</TableCell>
-                        <TableCell>{row.bhaktaPhone || "—"}</TableCell>
-                        <TableCell className="max-w-[200px] truncate text-muted-foreground">
-                          {row.bhaktaAddress || "—"}
-                        </TableCell>
-                        <TableCell>{row.sevaName}</TableCell>
-                        <TableCell className="max-w-[200px] truncate text-muted-foreground">
-                          {row.remark || "—"}
-                        </TableCell>
-                        <TableCell>{row.isOnlinePay ? "Online" : "Cash"}</TableCell>
-                        <TableCell className="text-right font-medium">
-                          {formatCurrency(row.amount)}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            aria-label={`Reprint kanike entry ${row.receiptNo}`}
-                            onClick={() => setPrintJob(row)}
-                          >
-                            <Printer className="size-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            aria-label={`Edit kanike entry ${row.receiptNo}`}
-                            onClick={() => setEditingRow(row)}
-                          >
-                            <Pencil className="size-4" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
+        <CardContent>{children}</CardContent>
       </Card>
-
-      <KanikeEditDialog
-        row={editingRow}
-        kanikeTypes={kanikeTypes}
-        onOpenChange={(open) => !open && setEditingRow(null)}
-        onSaved={() => router.refresh()}
-      />
 
       {printJob ? (
         <div className="hidden print:block">

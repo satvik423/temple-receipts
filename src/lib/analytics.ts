@@ -1,9 +1,9 @@
 import { ReceiptModel } from "@/models/Receipt";
 import { getBusinessDate } from "@/lib/date";
+import { RANGE_LABELS, REVENUE_RANGES, type RevenueRange } from "@/lib/analytics-shared";
 
-export type RevenueRange = "daily" | "weekly" | "monthly" | "yearly";
-
-export const REVENUE_RANGES: RevenueRange[] = ["daily", "weekly", "monthly", "yearly"];
+export { RANGE_LABELS, REVENUE_RANGES };
+export type { RevenueRange };
 
 export type RevenuePoint = { label: string; total: number };
 export type SevaBreakdownEntry = { name: string; total: number; quantity: number };
