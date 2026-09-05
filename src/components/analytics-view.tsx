@@ -34,12 +34,18 @@ export function AnalyticsView({
   periodStats,
   revenueSeries,
   sevaBreakdown,
+  sevaRange,
+  sevaOffset,
+  sevaPeriodLabel,
 }: {
   range: RevenueRange;
   offset: number;
   periodStats: PeriodStat[];
   revenueSeries: RevenuePoint[];
   sevaBreakdown: SevaBreakdownEntry[];
+  sevaRange: RevenueRange;
+  sevaOffset: number;
+  sevaPeriodLabel: string;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -64,6 +70,15 @@ export function AnalyticsView({
   function stepOffset(delta: number) {
     const next = Math.max(0, offset + delta);
     updateParams({ offset: next > 0 ? String(next) : undefined });
+  }
+
+  function setSevaRange(nextRange: string) {
+    updateParams({ sevaRange: nextRange, sevaOffset: undefined });
+  }
+
+  function stepSevaOffset(delta: number) {
+    const next = Math.max(0, sevaOffset + delta);
+    updateParams({ sevaOffset: next > 0 ? String(next) : undefined });
   }
 
   const maxSevaTotal = Math.max(1, ...sevaBreakdown.map((s) => s.total));
@@ -158,11 +173,41 @@ export function AnalyticsView({
       </Card>
 
       <Card>
-        <CardHeader className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+        <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <CardTitle className="text-base">Seva Contributions</CardTitle>
-          {periodLabel ? <span className="text-sm text-muted-foreground">{periodLabel}</span> : null}
+          <Tabs value={sevaRange} onValueChange={setSevaRange}>
+            <TabsList>
+              {(Object.keys(RANGE_LABELS) as RevenueRange[]).map((key) => (
+                <TabsTrigger key={key} value={key}>
+                  {RANGE_LABELS[key]}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
         </CardHeader>
         <CardContent>
+          <div className="mb-3 flex items-center justify-between">
+            <span className="text-sm text-muted-foreground">{sevaPeriodLabel}</span>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="icon"
+                aria-label="Show earlier period"
+                onClick={() => stepSevaOffset(1)}
+              >
+                <ChevronLeft className="size-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                aria-label="Show later period"
+                disabled={sevaOffset === 0}
+                onClick={() => stepSevaOffset(-1)}
+              >
+                <ChevronRight className="size-4" />
+              </Button>
+            </div>
+          </div>
           {sevaBreakdown.length === 0 ? (
             <p className="text-sm text-muted-foreground">No sales in this period yet.</p>
           ) : (
