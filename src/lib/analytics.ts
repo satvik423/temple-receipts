@@ -147,7 +147,6 @@ export async function getRevenueSeries(
 export async function getSevaBreakdown(
   startDate: string,
   endDate: string,
-  limit = 8,
 ): Promise<SevaBreakdownEntry[]> {
   const rows = await ReceiptModel.aggregate([
     { $match: { businessDate: { $gte: startDate, $lte: endDate } } },
@@ -160,31 +159,8 @@ export async function getSevaBreakdown(
       },
     },
     { $sort: { total: -1 } },
-    { $limit: limit },
   ]);
   return rows.map((row) => ({ name: row._id as string, total: row.total, quantity: row.quantity }));
-}
-
-export async function getFixedVsCustomSplit(
-  startDate: string,
-  endDate: string,
-): Promise<{ fixed: number; custom: number }> {
-  const rows = await ReceiptModel.aggregate([
-    { $match: { businessDate: { $gte: startDate, $lte: endDate } } },
-    { $unwind: "$items" },
-    { $group: { _id: "$items.isCustom", total: { $sum: "$items.amount" } } },
-  ]);
-
-  let fixed = 0;
-  let custom = 0;
-  for (const row of rows) {
-    if (row._id) {
-      custom = row.total;
-    } else {
-      fixed = row.total;
-    }
-  }
-  return { fixed, custom };
 }
 
 async function aggregatePeriod(start: string, end: string): Promise<{ total: number; count: number }> {
