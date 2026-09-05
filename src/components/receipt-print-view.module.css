@@ -18,13 +18,6 @@
   margin: 0;
 }
 
-.logo {
-  display: block;
-  height: 16mm;
-  width: auto;
-  margin: 0 auto 1mm;
-}
-
 .separator {
   margin: 5px 0;
 }
@@ -81,24 +74,6 @@
   margin-top: 2px;
   font-size: 13px;
   font-weight: bold;
-}
-
-.qrSection {
-  text-align: center;
-  margin-top: 8px;
-}
-
-.qrCode {
-  display: block;
-  width: 28mm;
-  height: 28mm;
-  margin: 0 auto;
-}
-
-.qrCaption {
-  margin: 2px 0 0;
-  font-size: 10px;
-  font-weight: normal;
 }
 
 @media print {
