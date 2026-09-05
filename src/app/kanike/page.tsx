@@ -1,11 +1,13 @@
+import { Suspense } from "react";
 import { requireUser } from "@/lib/auth";
 import { connectToDatabase } from "@/lib/mongodb";
 import { SevaModel } from "@/models/Seva";
-import { ReceiptModel } from "@/models/Receipt";
-import { toSevaDTO, toKanikeRowDTO, type KanikeRowDTO } from "@/lib/dto";
+import { toSevaDTO } from "@/lib/dto";
 import { getBusinessDate } from "@/lib/date";
 import { getOrCreateSettings } from "@/lib/settings";
-import { KanikeView } from "@/components/kanike-view";
+import { KanikeShell } from "@/components/kanike-shell";
+import { KanikeData } from "@/components/kanike-data";
+import { TableSkeleton } from "@/components/table-skeleton";
 
 export const dynamic = "force-dynamic";
 
@@ -24,28 +26,29 @@ export default async function KanikePage({
 
   await connectToDatabase();
 
-  const [kanikeTypes, receipts, settings] = await Promise.all([
+  const [kanikeTypes, settings] = await Promise.all([
     SevaModel.find({ active: true, category: "kanike" }).sort({ order: 1, createdAt: 1 }),
-    ReceiptModel.find({ businessDate: date, "items.isKanike": true }).sort({ receiptNo: -1 }),
     getOrCreateSettings(),
   ]);
 
-  const rows = receipts
-    .map(toKanikeRowDTO)
-    .filter((row): row is KanikeRowDTO => row !== null);
+  const kanikeTypeDTOs = kanikeTypes.map(toSevaDTO);
+  const templeSettings = {
+    name: settings.name,
+    place: settings.place,
+    phone: settings.phone,
+    upiId: settings.upiId ?? undefined,
+  };
 
   return (
-    <KanikeView
-      kanikeTypes={kanikeTypes.map(toSevaDTO)}
-      rows={rows}
+    <KanikeShell
+      kanikeTypes={kanikeTypeDTOs}
       date={date}
       today={today}
-      templeSettings={{
-        name: settings.name,
-        place: settings.place,
-        phone: settings.phone,
-        upiId: settings.upiId ?? undefined,
-      }}
-    />
+      templeSettings={templeSettings}
+    >
+      <Suspense key={date} fallback={<TableSkeleton />}>
+        <KanikeData date={date} kanikeTypes={kanikeTypeDTOs} />
+      </Suspense>
+    </KanikeShell>
   );
 }

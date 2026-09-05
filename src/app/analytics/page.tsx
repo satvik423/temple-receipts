@@ -1,16 +1,13 @@
+import { Suspense } from "react";
 import { requireAdmin } from "@/lib/auth";
-import { connectToDatabase } from "@/lib/mongodb";
 import { getBusinessDate } from "@/lib/date";
-import {
-  REVENUE_RANGES,
-  getAnchorDate,
-  getPeriodStats,
-  getRevenueSeries,
-  getSevaBreakdown,
-  getSinglePeriod,
-  type RevenueRange,
-} from "@/lib/analytics";
-import { AnalyticsView } from "@/components/analytics-view";
+import { REVENUE_RANGES, type RevenueRange } from "@/lib/analytics";
+import { PeriodStatsSection } from "@/components/analytics-stats";
+import { RevenueChartShell } from "@/components/analytics-revenue-shell";
+import { RevenueChartData } from "@/components/analytics-revenue-data";
+import { SevaBreakdownShell } from "@/components/analytics-seva-shell";
+import { SevaBreakdownData } from "@/components/analytics-seva-data";
+import { StatsSkeleton, ChartSkeleton } from "@/components/analytics-skeletons";
 
 export const dynamic = "force-dynamic";
 
@@ -37,27 +34,27 @@ export default async function AnalyticsPage({
     : "daily";
   const sevaOffset = parseOffset(sevaOffsetParam);
 
-  await connectToDatabase();
   const today = getBusinessDate();
-  const anchor = getAnchorDate(range, today, offset);
-  const sevaPeriod = getSinglePeriod(sevaRange, today, sevaOffset);
-
-  const [periodStats, revenueSeries, sevaBreakdown] = await Promise.all([
-    getPeriodStats(today),
-    getRevenueSeries(range, anchor),
-    getSevaBreakdown(sevaPeriod.start, sevaPeriod.end),
-  ]);
 
   return (
-    <AnalyticsView
-      range={range}
-      offset={offset}
-      periodStats={periodStats}
-      revenueSeries={revenueSeries}
-      sevaBreakdown={sevaBreakdown}
-      sevaRange={sevaRange}
-      sevaOffset={sevaOffset}
-      sevaPeriodLabel={sevaPeriod.label}
-    />
+    <div className="space-y-4">
+      <h1 className="text-lg font-semibold">Analytics</h1>
+
+      <Suspense fallback={<StatsSkeleton />}>
+        <PeriodStatsSection today={today} />
+      </Suspense>
+
+      <RevenueChartShell range={range} offset={offset}>
+        <Suspense key={`${range}-${offset}`} fallback={<ChartSkeleton />}>
+          <RevenueChartData range={range} offset={offset} today={today} />
+        </Suspense>
+      </RevenueChartShell>
+
+      <SevaBreakdownShell sevaRange={sevaRange} sevaOffset={sevaOffset}>
+        <Suspense key={`${sevaRange}-${sevaOffset}`} fallback={<ChartSkeleton />}>
+          <SevaBreakdownData sevaRange={sevaRange} sevaOffset={sevaOffset} today={today} />
+        </Suspense>
+      </SevaBreakdownShell>
+    </div>
   );
 }
