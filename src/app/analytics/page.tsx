@@ -4,7 +4,6 @@ import { getBusinessDate } from "@/lib/date";
 import {
   REVENUE_RANGES,
   getAnchorDate,
-  getFixedVsCustomSplit,
   getPeriodStats,
   getRangeStartDate,
   getRevenueSeries,
@@ -38,11 +37,10 @@ export default async function AnalyticsPage({
   const anchor = getAnchorDate(range, today, offset);
   const rangeStart = getRangeStartDate(range, anchor);
 
-  const [periodStats, revenueSeries, sevaBreakdown, fixedVsCustom] = await Promise.all([
+  const [periodStats, revenueSeries, sevaBreakdown] = await Promise.all([
     getPeriodStats(today),
     getRevenueSeries(range, anchor),
     getSevaBreakdown(rangeStart, anchor),
-    getFixedVsCustomSplit(rangeStart, anchor),
   ]);
 
   return (
@@ -52,7 +50,6 @@ export default async function AnalyticsPage({
       periodStats={periodStats}
       revenueSeries={revenueSeries}
       sevaBreakdown={sevaBreakdown}
-      fixedVsCustom={fixedVsCustom}
     />
   );
 }

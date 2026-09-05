@@ -34,14 +34,12 @@ export function AnalyticsView({
   periodStats,
   revenueSeries,
   sevaBreakdown,
-  fixedVsCustom,
 }: {
   range: RevenueRange;
   offset: number;
   periodStats: PeriodStat[];
   revenueSeries: RevenuePoint[];
   sevaBreakdown: SevaBreakdownEntry[];
-  fixedVsCustom: { fixed: number; custom: number };
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -69,7 +67,6 @@ export function AnalyticsView({
   }
 
   const maxSevaTotal = Math.max(1, ...sevaBreakdown.map((s) => s.total));
-  const fixedVsCustomTotal = fixedVsCustom.fixed + fixedVsCustom.custom;
   const periodLabel =
     revenueSeries.length > 0
       ? `${revenueSeries[0].label} – ${revenueSeries[revenueSeries.length - 1].label}`
@@ -160,61 +157,34 @@ export function AnalyticsView({
         </CardContent>
       </Card>
 
-      <div className="grid gap-4 lg:grid-cols-[1fr_280px]">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Top Sevas</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {sevaBreakdown.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No sales in this period yet.</p>
-            ) : (
-              <div className="space-y-3">
-                {sevaBreakdown.map((seva) => (
-                  <div key={seva.name} className="space-y-1">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="font-medium">{seva.name}</span>
-                      <span className="text-muted-foreground">{formatCurrency(seva.total)}</span>
-                    </div>
-                    <div className="h-2 rounded-full bg-muted">
-                      <div
-                        className="h-2 rounded-full bg-primary"
-                        style={{ width: `${(seva.total / maxSevaTotal) * 100}%` }}
-                      />
-                    </div>
+      <Card>
+        <CardHeader className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+          <CardTitle className="text-base">Seva Contributions</CardTitle>
+          {periodLabel ? <span className="text-sm text-muted-foreground">{periodLabel}</span> : null}
+        </CardHeader>
+        <CardContent>
+          {sevaBreakdown.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No sales in this period yet.</p>
+          ) : (
+            <div className="space-y-3">
+              {sevaBreakdown.map((seva) => (
+                <div key={seva.name} className="space-y-1">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="font-medium">{seva.name}</span>
+                    <span className="text-muted-foreground">{formatCurrency(seva.total)}</span>
                   </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Fixed vs Custom</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <p className="text-xs text-muted-foreground">Fixed-price Sevas</p>
-              <p className="text-lg font-semibold">{formatCurrency(fixedVsCustom.fixed)}</p>
-              <p className="text-xs text-muted-foreground">
-                {fixedVsCustomTotal > 0
-                  ? `${Math.round((fixedVsCustom.fixed / fixedVsCustomTotal) * 100)}%`
-                  : "—"}
-              </p>
+                  <div className="h-2 rounded-full bg-muted">
+                    <div
+                      className="h-2 rounded-full bg-primary"
+                      style={{ width: `${(seva.total / maxSevaTotal) * 100}%` }}
+                    />
+                  </div>
+                </div>
+              ))}
             </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Custom-price Sevas</p>
-              <p className="text-lg font-semibold">{formatCurrency(fixedVsCustom.custom)}</p>
-              <p className="text-xs text-muted-foreground">
-                {fixedVsCustomTotal > 0
-                  ? `${Math.round((fixedVsCustom.custom / fixedVsCustomTotal) * 100)}%`
-                  : "—"}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
