@@ -1,6 +1,5 @@
 import { formatCurrency } from "@/lib/format";
 import { formatReceiptDate, formatReceiptTime } from "@/lib/date";
-import { buildUpiUri, generateQrDataUrl } from "@/lib/upi-qr";
 import type { ReceiptDTO, TempleHeaderDTO } from "@/lib/dto";
 
 export class PrinterNotConnectedError extends Error {
@@ -88,15 +87,6 @@ async function openForPrinting(
   throw new Error("No bulk OUT USB endpoint found on this device's interfaces.");
 }
 
-function loadImage(src: string): Promise<HTMLImageElement> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => resolve(img);
-    img.onerror = () => reject(new Error(`Failed to load ${src}`));
-    img.src = src;
-  });
-}
-
 function setFont(ctx: CanvasRenderingContext2D, size: number, bold = true) {
   ctx.font = `${bold ? "bold " : ""}${size}px "Noto Sans Kannada", "Noto Sans", sans-serif`;
   ctx.fillStyle = "#000";
@@ -144,6 +134,15 @@ async function renderReceiptCanvas(
   const width = PRINTER_WIDTH_DOTS;
   const contentWidth = width - PAD * 2;
   const nameColWidth = contentWidth - QTY_COL_WIDTH - AMOUNT_COL_WIDTH - 16;
+
+  try {
+    await Promise.all([
+      document.fonts.load('400 16px "Noto Sans Kannada"'),
+      document.fonts.load('700 16px "Noto Sans Kannada"'),
+    ]);
+  } catch (err) {
+    console.warn("Could not load Noto Sans Kannada for printing:", err);
+  }
 
   const scratch = document.createElement("canvas");
   scratch.width = width;
@@ -209,16 +208,6 @@ async function renderReceiptCanvas(
     });
   }
 
-  try {
-    const logo = await loadImage("/logo.png");
-    const logoHeight = 150;
-    const logoWidth = logo.width * (logoHeight / logo.height);
-    ctx.drawImage(logo, (width - logoWidth) / 2, y, logoWidth, logoHeight);
-    y += logoHeight + 10;
-  } catch (err) {
-    console.warn("Could not load logo for printing:", err);
-  }
-
   centerText(`${templeSettings.name},`);
   centerText(templeSettings.place);
   centerText(`Mob: ${templeSettings.phone}`);
@@ -268,27 +257,6 @@ async function renderReceiptCanvas(
 
   dashedLine();
   tableRow("TOTAL", "", formatCurrency(receipt.total), FONT_TOTAL);
-
-  if (templeSettings.upiId) {
-    y += 20;
-    try {
-      const qrDataUrl = generateQrDataUrl(
-        buildUpiUri({
-          upiId: templeSettings.upiId,
-          payeeName: templeSettings.name,
-          amount: receipt.total,
-          note: `Receipt #${receipt.receiptNo}`,
-        }),
-      );
-      const qrImage = await loadImage(qrDataUrl);
-      const qrSize = 220;
-      ctx.drawImage(qrImage, (width - qrSize) / 2, y, qrSize, qrSize);
-      y += qrSize + 10;
-      centerText("Scan & Pay via UPI", FONT_SMALL);
-    } catch (err) {
-      console.warn("Could not render UPI QR code:", err);
-    }
-  }
 
   y += 40;
 

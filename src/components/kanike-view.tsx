@@ -80,8 +80,24 @@ export function KanikeView({
 
   React.useEffect(() => {
     if (!printJob) return;
-    const timer = setTimeout(() => window.print(), 150);
-    return () => clearTimeout(timer);
+    let cancelled = false;
+
+    const timer = setTimeout(async () => {
+      try {
+        await Promise.all([
+          document.fonts.load('400 16px "Noto Sans Kannada"'),
+          document.fonts.load('700 16px "Noto Sans Kannada"'),
+        ]);
+      } catch {
+        // Print with whatever font is available rather than blocking forever.
+      }
+      if (!cancelled) window.print();
+    }, 150);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
   }, [printJob]);
 
   React.useEffect(() => {
