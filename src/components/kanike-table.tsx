@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { usePathname, useRouter } from "next/navigation";
+import { createPortal } from "react-dom";
 import { Pencil, Printer } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -149,11 +150,14 @@ export function KanikeTable({
         }}
       />
 
-      {printJob ? (
-        <div className="hidden print:block">
-          <KanikeReceiptDocument row={printJob} templeSettings={templeSettings} />
-        </div>
-      ) : null}
+      {printJob
+        ? createPortal(
+            <div className="hidden print:block">
+              <KanikeReceiptDocument row={printJob} templeSettings={templeSettings} />
+            </div>,
+            document.body,
+          )
+        : null}
     </>
   );
 }
