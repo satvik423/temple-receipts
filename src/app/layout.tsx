@@ -55,7 +55,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
           disableTransitionOnChange
         >
           <Nav templeName={settings.name} user={user} />
-          <main className="mx-auto w-full max-w-6xl flex-1 px-3 py-4 sm:px-6 sm:py-6 print:max-w-none print:p-0">
+          <main className="w-full flex-1 px-3 py-4 sm:px-6 sm:py-6 print:p-0">
             {children}
           </main>
           <div className="print:hidden">

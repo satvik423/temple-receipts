@@ -90,7 +90,7 @@ export function Nav({
 
   return (
     <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60 print:hidden">
-      <div className="mx-auto max-w-6xl px-3 sm:px-6">
+      <div className="w-full px-3 sm:px-6">
         <div className="flex min-h-14 items-center gap-2 py-2 sm:h-14 sm:py-0">
           <Link
             href="/sell"

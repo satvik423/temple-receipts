@@ -476,7 +476,7 @@ export function SellCart({
       </Card>
 
       <div className="fixed inset-x-0 bottom-0 z-10 border-t bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60 print:hidden lg:hidden">
-        <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-3 py-3 sm:px-6">
+        <div className="flex w-full items-center justify-between gap-3 px-3 py-3 sm:px-6">
           <div>
             <p className="text-xs text-muted-foreground">Total</p>
             <p className="text-lg font-semibold">{formatCurrency(total)}</p>
