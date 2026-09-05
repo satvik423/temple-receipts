@@ -13,6 +13,7 @@ const ReceiptItemSchema = new Schema(
     bhaktaPhone: { type: String },
     isKanike: { type: Boolean, default: false },
     remark: { type: String },
+    isOnlinePay: { type: Boolean, default: false },
   },
   { _id: false },
 );

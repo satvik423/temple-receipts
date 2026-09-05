@@ -4,6 +4,7 @@ import * as React from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -13,14 +14,16 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import type { KanikeRowDTO } from "@/lib/dto";
+import type { KanikeRowDTO, SevaDTO } from "@/lib/dto";
 
 export function KanikeEditDialog({
   row,
+  kanikeTypes,
   onOpenChange,
   onSaved,
 }: {
   row: KanikeRowDTO | null;
+  kanikeTypes: SevaDTO[];
   onOpenChange: (open: boolean) => void;
   onSaved: () => void;
 }) {
@@ -30,7 +33,14 @@ export function KanikeEditDialog({
         <DialogHeader>
           <DialogTitle>Edit Kanike Entry</DialogTitle>
         </DialogHeader>
-        {row ? <KanikeEditForm row={row} onOpenChange={onOpenChange} onSaved={onSaved} /> : null}
+        {row ? (
+          <KanikeEditForm
+            row={row}
+            kanikeTypes={kanikeTypes}
+            onOpenChange={onOpenChange}
+            onSaved={onSaved}
+          />
+        ) : null}
       </DialogContent>
     </Dialog>
   );
@@ -38,16 +48,20 @@ export function KanikeEditDialog({
 
 function KanikeEditForm({
   row,
+  kanikeTypes,
   onOpenChange,
   onSaved,
 }: {
   row: KanikeRowDTO;
+  kanikeTypes: SevaDTO[];
   onOpenChange: (open: boolean) => void;
   onSaved: () => void;
 }) {
   const [bhaktaName, setBhaktaName] = React.useState(row.bhaktaName ?? "");
   const [bhaktaPhone, setBhaktaPhone] = React.useState(row.bhaktaPhone ?? "");
   const [remark, setRemark] = React.useState(row.remark ?? "");
+  const [sevaId, setSevaId] = React.useState(row.sevaId);
+  const [onlinePay, setOnlinePay] = React.useState(row.isOnlinePay);
   const [error, setError] = React.useState<string | null>(null);
   const [submitting, setSubmitting] = React.useState(false);
 
@@ -64,6 +78,8 @@ function KanikeEditForm({
           bhaktaName: bhaktaName.trim(),
           bhaktaPhone: bhaktaPhone.trim(),
           remark: remark.trim(),
+          sevaId,
+          isOnlinePay: onlinePay,
         }),
       });
 
@@ -112,6 +128,33 @@ function KanikeEditForm({
           Remark <span className="text-muted-foreground">(optional)</span>
         </Label>
         <Input id="kanike-edit-remark" value={remark} onChange={(e) => setRemark(e.target.value)} />
+      </div>
+
+      <div className="space-y-2">
+        <Label>Type of Kanike</Label>
+        <div className="flex flex-wrap gap-2">
+          {kanikeTypes.map((type) => (
+            <Button
+              key={type.id}
+              type="button"
+              variant={sevaId === type.id ? "default" : "outline"}
+              onClick={() => setSevaId(type.id)}
+            >
+              {type.name}
+            </Button>
+          ))}
+        </div>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <Checkbox
+          id="kanike-edit-online-pay"
+          checked={onlinePay}
+          onCheckedChange={(checked) => setOnlinePay(checked === true)}
+        />
+        <Label htmlFor="kanike-edit-online-pay" className="font-normal">
+          Online Pay
+        </Label>
       </div>
 
       {error ? <p className="text-sm text-destructive">{error}</p> : null}

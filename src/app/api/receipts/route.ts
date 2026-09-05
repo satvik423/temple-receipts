@@ -13,6 +13,7 @@ type IncomingItem = {
   bhaktaName?: string;
   bhaktaPhone?: string;
   remark?: string;
+  isOnlinePay?: boolean;
 };
 
 export async function POST(request: Request) {
@@ -74,6 +75,7 @@ export async function POST(request: Request) {
         bhaktaPhone,
         isKanike: seva.category === "kanike",
         remark,
+        isOnlinePay: incoming.isOnlinePay === true,
       });
       total += amount;
     } else {
@@ -95,6 +97,7 @@ export async function POST(request: Request) {
         amount,
         isCustom: false,
         isKanike: false,
+        isOnlinePay: false,
       });
       total += amount;
     }
