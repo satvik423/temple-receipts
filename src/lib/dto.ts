@@ -36,8 +36,10 @@ export type ReceiptItemDTO = {
   isCustom: boolean;
   bhaktaName?: string;
   bhaktaPhone?: string;
+  bhaktaAddress?: string;
   isKanike: boolean;
   remark?: string;
+  isOnlinePay: boolean;
 };
 
 export function displaySevaName(item: {
@@ -74,8 +76,10 @@ export function toReceiptDTO(receipt: Receipt): ReceiptDTO {
       isCustom: item.isCustom,
       bhaktaName: item.bhaktaName ?? undefined,
       bhaktaPhone: item.bhaktaPhone ?? undefined,
+      bhaktaAddress: item.bhaktaAddress ?? undefined,
       isKanike: item.isKanike ?? false,
       remark: item.remark ?? undefined,
+      isOnlinePay: item.isOnlinePay ?? false,
     })),
     total: receipt.total,
     createdAt: receipt.createdAt.toISOString(),
@@ -88,11 +92,14 @@ export type KanikeRowDTO = {
   dbn: number;
   businessDate: string;
   createdAt: string;
+  sevaId: string;
   sevaName: string;
   amount: number;
   bhaktaName?: string;
   bhaktaPhone?: string;
+  bhaktaAddress?: string;
   remark?: string;
+  isOnlinePay: boolean;
 };
 
 export function toKanikeRowDTO(receipt: Receipt): KanikeRowDTO | null {
@@ -105,11 +112,14 @@ export function toKanikeRowDTO(receipt: Receipt): KanikeRowDTO | null {
     dbn: receipt.dbn,
     businessDate: receipt.businessDate,
     createdAt: receipt.createdAt.toISOString(),
+    sevaId: item.sevaId.toString(),
     sevaName: displaySevaName(item),
     amount: item.amount,
     bhaktaName: item.bhaktaName ?? undefined,
     bhaktaPhone: item.bhaktaPhone ?? undefined,
+    bhaktaAddress: item.bhaktaAddress ?? undefined,
     remark: item.remark ?? undefined,
+    isOnlinePay: item.isOnlinePay ?? false,
   };
 }
 

@@ -87,6 +87,15 @@ async function openForPrinting(
   throw new Error("No bulk OUT USB endpoint found on this device's interfaces.");
 }
 
+function loadImage(src: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error(`Failed to load ${src}`));
+    img.src = src;
+  });
+}
+
 function setFont(ctx: CanvasRenderingContext2D, size: number, bold = true) {
   ctx.font = `${bold ? "bold " : ""}${size}px "Noto Sans Kannada", "Noto Sans", sans-serif`;
   ctx.fillStyle = "#000";
@@ -126,11 +135,11 @@ function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number)
   return lines;
 }
 
-function renderReceiptCanvas(
+async function renderReceiptCanvas(
   receipt: ReceiptDTO,
   templeSettings: { name: string; place: string; phone: string },
   isCopy: boolean,
-): HTMLCanvasElement {
+): Promise<HTMLCanvasElement> {
   const width = PRINTER_WIDTH_DOTS;
   const contentWidth = width - PAD * 2;
   const nameColWidth = contentWidth - QTY_COL_WIDTH - AMOUNT_COL_WIDTH - 16;
@@ -147,42 +156,36 @@ function renderReceiptCanvas(
   function centerText(text: string, size = FONT_NORMAL) {
     setFont(ctx, size);
     ctx.textAlign = "center";
-    ctx.fillText(text, width / 2, y);
-    y += LINE_H;
+    const lines = wrapText(ctx, text, contentWidth);
+    for (const line of lines) {
+      ctx.fillText(line, width / 2, y);
+      y += LINE_H;
+    }
   }
 
   function dashedLine() {
-    y += 6;
-    ctx.save();
-    ctx.strokeStyle = "#000";
-    ctx.lineWidth = 2;
-    ctx.setLineDash([6, 6]);
-    ctx.beginPath();
-    ctx.moveTo(PAD, y);
-    ctx.lineTo(width - PAD, y);
-    ctx.stroke();
-    ctx.restore();
-    y += 20;
+    y += 26;
   }
 
   function solidLine() {
-    y += 4;
-    ctx.save();
-    ctx.strokeStyle = "#000";
-    ctx.lineWidth = 2;
-    ctx.setLineDash([]);
-    ctx.beginPath();
-    ctx.moveTo(PAD, y);
-    ctx.lineTo(width - PAD, y);
-    ctx.stroke();
-    ctx.restore();
-    y += 16;
+    y += 20;
   }
 
   function twoCol(left: string, right: string, size = FONT_NORMAL) {
     setFont(ctx, size);
+    const gap = 12;
+    const fitsOneLine =
+      ctx.measureText(left).width + ctx.measureText(right).width + gap <= contentWidth;
+
     ctx.textAlign = "left";
     ctx.fillText(left, PAD, y);
+    if (fitsOneLine) {
+      ctx.textAlign = "right";
+      ctx.fillText(right, width - PAD, y);
+      y += LINE_H;
+      return;
+    }
+    y += LINE_H;
     ctx.textAlign = "right";
     ctx.fillText(right, width - PAD, y);
     y += LINE_H;
@@ -203,6 +206,16 @@ function renderReceiptCanvas(
       }
       y += size === FONT_TOTAL ? LINE_H + 6 : LINE_H;
     });
+  }
+
+  try {
+    const logo = await loadImage("/logo.png");
+    const logoHeight = 150;
+    const logoWidth = logo.width * (logoHeight / logo.height);
+    ctx.drawImage(logo, (width - logoWidth) / 2, y, logoWidth, logoHeight);
+    y += logoHeight + 10;
+  } catch (err) {
+    console.warn("Could not load logo for printing:", err);
   }
 
   centerText(`${templeSettings.name},`);
@@ -240,7 +253,7 @@ function renderReceiptCanvas(
   if (customItems.length > 0) {
     y += 12;
     for (const item of customItems) {
-      const text = `${item.bhaktaName} has ${item.sevaName} ${formatCurrency(item.amount)}${item.remark ? ` — ${item.remark}` : ""}`;
+      const text = `${item.bhaktaName} has ${item.sevaName} ${formatCurrency(item.amount)}${item.remark ? ` ${item.remark}` : ""}`;
       setFont(ctx, FONT_SMALL, false);
       const lines = wrapText(ctx, text, contentWidth);
       lines.forEach((line) => {
@@ -332,7 +345,7 @@ export async function printReceiptToUsb(
     throw new PrinterNotConnectedError();
   }
 
-  const canvas = renderReceiptCanvas(receipt, templeSettings, isCopy);
+  const canvas = await renderReceiptCanvas(receipt, templeSettings, isCopy);
   const data = canvasToEscPosRaster(canvas);
   await sendToPrinter(device, data);
 }

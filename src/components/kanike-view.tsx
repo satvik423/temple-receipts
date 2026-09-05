@@ -7,6 +7,7 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -44,8 +45,10 @@ export function KanikeView({
 
   const [bhaktaName, setBhaktaName] = React.useState("");
   const [bhaktaPhone, setBhaktaPhone] = React.useState("");
+  const [bhaktaAddress, setBhaktaAddress] = React.useState("");
   const [remark, setRemark] = React.useState("");
   const [amount, setAmount] = React.useState("");
+  const [onlinePay, setOnlinePay] = React.useState(false);
   const [selectedTypeId, setSelectedTypeId] = React.useState<string | null>(null);
   const [submitting, setSubmitting] = React.useState(false);
   const [printJob, setPrintJob] = React.useState<KanikeRowDTO | null>(null);
@@ -117,7 +120,9 @@ export function KanikeView({
               amount: Number(amount),
               bhaktaName: bhaktaName.trim(),
               bhaktaPhone: bhaktaPhone.trim(),
+              bhaktaAddress: bhaktaAddress.trim(),
               remark: remark.trim(),
+              isOnlinePay: onlinePay,
             },
           ],
         }),
@@ -132,8 +137,10 @@ export function KanikeView({
 
       setBhaktaName("");
       setBhaktaPhone("");
+      setBhaktaAddress("");
       setRemark("");
       setAmount("");
+      setOnlinePay(false);
       toast.success(`Bill #${data.receiptNo} saved`);
 
       const item = data.items[0];
@@ -143,11 +150,14 @@ export function KanikeView({
         dbn: data.dbn,
         businessDate: data.businessDate,
         createdAt: data.createdAt,
+        sevaId: item.sevaId,
         sevaName: displaySevaName(item),
         amount: item.amount,
         bhaktaName: item.bhaktaName,
         bhaktaPhone: item.bhaktaPhone,
+        bhaktaAddress: item.bhaktaAddress,
         remark: item.remark,
+        isOnlinePay: item.isOnlinePay,
       });
       router.refresh();
     } finally {
@@ -187,6 +197,16 @@ export function KanikeView({
               />
             </div>
             <div className="space-y-1.5">
+              <Label htmlFor="kanike-address">
+                Address <span className="text-muted-foreground">(optional)</span>
+              </Label>
+              <Input
+                id="kanike-address"
+                value={bhaktaAddress}
+                onChange={(e) => setBhaktaAddress(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5">
               <Label htmlFor="kanike-remark">
                 Remark <span className="text-muted-foreground">(optional)</span>
               </Label>
@@ -203,6 +223,17 @@ export function KanikeView({
                 onChange={(e) => setAmount(e.target.value)}
               />
             </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="kanike-online-pay"
+              checked={onlinePay}
+              onCheckedChange={(checked) => setOnlinePay(checked === true)}
+            />
+            <Label htmlFor="kanike-online-pay" className="font-normal">
+              Online Pay
+            </Label>
           </div>
 
           <div className="space-y-1.5">
@@ -281,8 +312,10 @@ export function KanikeView({
                     <TableHead>Time</TableHead>
                     <TableHead>Bhakta Name</TableHead>
                     <TableHead>Phone</TableHead>
+                    <TableHead>Address</TableHead>
                     <TableHead>Type</TableHead>
                     <TableHead>Remark</TableHead>
+                    <TableHead>Payment</TableHead>
                     <TableHead className="text-right">Amount</TableHead>
                     <TableHead className="text-right">Action</TableHead>
                   </TableRow>
@@ -298,10 +331,14 @@ export function KanikeView({
                         <TableCell>{formatReceiptTime(createdAt)}</TableCell>
                         <TableCell>{row.bhaktaName}</TableCell>
                         <TableCell>{row.bhaktaPhone || "—"}</TableCell>
+                        <TableCell className="max-w-[200px] truncate text-muted-foreground">
+                          {row.bhaktaAddress || "—"}
+                        </TableCell>
                         <TableCell>{row.sevaName}</TableCell>
                         <TableCell className="max-w-[200px] truncate text-muted-foreground">
                           {row.remark || "—"}
                         </TableCell>
+                        <TableCell>{row.isOnlinePay ? "Online" : "Cash"}</TableCell>
                         <TableCell className="text-right font-medium">
                           {formatCurrency(row.amount)}
                         </TableCell>
@@ -335,6 +372,7 @@ export function KanikeView({
 
       <KanikeEditDialog
         row={editingRow}
+        kanikeTypes={kanikeTypes}
         onOpenChange={(open) => !open && setEditingRow(null)}
         onSaved={() => router.refresh()}
       />

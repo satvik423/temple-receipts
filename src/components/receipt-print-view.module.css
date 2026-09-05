@@ -18,13 +18,18 @@
   margin: 0;
 }
 
+.logo {
+  display: block;
+  height: 16mm;
+  width: auto;
+  margin: 0 auto 1mm;
+}
+
 .separator {
-  border-top: 1px dashed #000;
   margin: 5px 0;
 }
 
 .separatorThin {
-  border-top: 1px solid #000;
   margin: 3px 0;
 }
 
