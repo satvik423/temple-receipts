@@ -13,6 +13,9 @@ import {
   resolveReportPeriod,
 } from "@/lib/pdf-report";
 
+// Cold starts on Vercel download and launch a headless Chromium; give that room to finish.
+export const maxDuration = 60;
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const period = resolveReportPeriod(searchParams);

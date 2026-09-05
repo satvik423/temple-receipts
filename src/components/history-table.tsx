@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { createPortal } from "react-dom";
 import { Printer } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -34,8 +35,24 @@ export function HistoryTable({
 
   React.useEffect(() => {
     if (!browserPrintReceipt) return;
-    const timer = setTimeout(() => window.print(), 150);
-    return () => clearTimeout(timer);
+    let cancelled = false;
+
+    const timer = setTimeout(async () => {
+      try {
+        await Promise.all([
+          document.fonts.load('400 16px "Noto Sans Kannada"'),
+          document.fonts.load('700 16px "Noto Sans Kannada"'),
+        ]);
+      } catch {
+        // Print with whatever font is available rather than blocking forever.
+      }
+      if (!cancelled) window.print();
+    }, 150);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
   }, [browserPrintReceipt]);
 
   React.useEffect(() => {
@@ -114,11 +131,14 @@ export function HistoryTable({
         </div>
       )}
 
-      {browserPrintReceipt ? (
-        <div className="hidden print:block">
-          <ReceiptDocument receipt={browserPrintReceipt} templeSettings={templeSettings} isCopy />
-        </div>
-      ) : null}
+      {browserPrintReceipt
+        ? createPortal(
+            <div className="hidden print:block">
+              <ReceiptDocument receipt={browserPrintReceipt} templeSettings={templeSettings} isCopy />
+            </div>,
+            document.body,
+          )
+        : null}
     </>
   );
 }

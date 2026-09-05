@@ -13,6 +13,9 @@ import {
   resolveReportPeriod,
 } from "@/lib/pdf-report";
 
+// Cold starts on Vercel download and launch a headless Chromium; give that room to finish.
+export const maxDuration = 60;
+
 type SevaTotal = { sevaName: string; sevaNameEn: string | null; qty: number; amount: number };
 
 export async function GET(request: Request) {

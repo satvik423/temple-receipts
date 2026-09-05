@@ -1,8 +1,14 @@
 import fs from "fs";
 import path from "path";
-import chromium from "@sparticuz/chromium";
+import chromium from "@sparticuz/chromium-min";
 import puppeteerCore from "puppeteer-core";
 import puppeteer from "puppeteer";
+
+// Pinned to the exact release that matches puppeteer-core's bundled Chrome version
+// (149.0.7827.22) — @sparticuz/chromium-min doesn't follow semver, so these two
+// packages, and this URL, must all be bumped together or the browser will fail to launch.
+const CHROMIUM_PACK_URL =
+  "https://github.com/Sparticuz/chromium/releases/download/v149.0.0/chromium-v149.0.0-pack.x64.tar";
 
 export { resolveReportPeriod, groupReceiptsByDate } from "@/lib/report-period";
 export type { ReportPeriod } from "@/lib/report-period";
@@ -148,10 +154,11 @@ async function launchBrowser() {
   // libraries full `puppeteer` expects), so use the Lambda-compatible build there. Locally
   // (and on any other Node host), the full `puppeteer` package's bundled Chromium works fine.
   if (process.env.VERCEL) {
+    chromium.setGraphicsMode = false; // skip extracting the WebGL stack — not needed for a plain document
     return puppeteerCore.launch({
-      args: chromium.args,
-      executablePath: await chromium.executablePath(),
-      headless: true,
+      args: await puppeteerCore.defaultArgs({ args: chromium.args, headless: "shell" }),
+      executablePath: await chromium.executablePath(CHROMIUM_PACK_URL),
+      headless: "shell",
     });
   }
   return puppeteer.launch({ headless: true, args: ["--no-sandbox"] });
