@@ -25,6 +25,8 @@ import { formatReceiptDate, formatReceiptTime, shiftBusinessDate } from "@/lib/d
 import { getAuthorizedPrinter, printReceiptToUsb } from "@/lib/thermal-printer";
 import type { KanikeRowDTO, ReceiptDTO, SevaDTO } from "@/lib/dto";
 
+const LAST_TYPE_STORAGE_KEY = "kanike:lastTypeId";
+
 export function KanikeView({
   kanikeTypes,
   rows,
@@ -56,6 +58,30 @@ export function KanikeView({
   React.useEffect(() => {
     getAuthorizedPrinter().then((device) => setPrinterConnected(device !== null));
   }, []);
+
+  React.useEffect(() => {
+    Promise.resolve().then(() => {
+      let lastTypeId: string | null = null;
+      try {
+        lastTypeId = localStorage.getItem(LAST_TYPE_STORAGE_KEY);
+      } catch {
+        // localStorage unavailable (private browsing, etc.) — just skip restoring
+      }
+      if (lastTypeId && kanikeTypes.some((type) => type.id === lastTypeId)) {
+        setSelectedTypeId(lastTypeId);
+      }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function selectType(typeId: string) {
+    setSelectedTypeId(typeId);
+    try {
+      localStorage.setItem(LAST_TYPE_STORAGE_KEY, typeId);
+    } catch {
+      // localStorage unavailable — selection still works for this session
+    }
+  }
 
   React.useEffect(() => {
     if (!browserPrintJob) return;
@@ -132,7 +158,6 @@ export function KanikeView({
       setBhaktaPhone("");
       setRemark("");
       setAmount("");
-      setSelectedTypeId(null);
       toast.success(`Bill #${data.receiptNo} saved`);
       await printBill(data);
       router.refresh();
@@ -215,7 +240,7 @@ export function KanikeView({
                     key={type.id}
                     type="button"
                     variant={selectedTypeId === type.id ? "default" : "outline"}
-                    onClick={() => setSelectedTypeId(type.id)}
+                    onClick={() => selectType(type.id)}
                   >
                     {type.name}
                   </Button>
