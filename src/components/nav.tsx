@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   BarChart3,
+  HandCoins,
   History,
   Settings,
   ShoppingCart,
@@ -24,6 +25,7 @@ type NavItem = {
 const ADMIN_NAV_ITEMS: ReadonlyArray<NavItem> = [
   { href: "/sell", label: "Seva", icon: ShoppingCart },
   { href: "/sevas", label: "Add Seva", icon: ScrollText },
+  { href: "/kanike", label: "Kanike", icon: HandCoins },
   { href: "/history", label: "History", icon: History },
   { href: "/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/settings", label: "Settings", icon: Settings },
@@ -31,6 +33,7 @@ const ADMIN_NAV_ITEMS: ReadonlyArray<NavItem> = [
 
 const USER_NAV_ITEMS: ReadonlyArray<NavItem> = [
   { href: "/sell", label: "Seva", icon: ShoppingCart },
+  { href: "/kanike", label: "Kanike", icon: HandCoins },
 ];
 
 function NavLinks({

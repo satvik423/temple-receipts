@@ -59,6 +59,7 @@ export function ReceiptDocument({
           {customItems.map((item, index) => (
             <p key={index}>
               {item.bhaktaName} has {item.sevaName} {formatCurrency(item.amount)}
+              {item.remark ? ` — ${item.remark}` : ""}
             </p>
           ))}
         </div>

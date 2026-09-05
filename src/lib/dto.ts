@@ -9,6 +9,7 @@ export type SevaDTO = {
   price: number | null;
   active: boolean;
   order: number;
+  category: "seva" | "kanike";
   createdAt: string;
 };
 
@@ -20,6 +21,7 @@ export function toSevaDTO(seva: Seva): SevaDTO {
     price: seva.price ?? null,
     active: seva.active ?? true,
     order: seva.order ?? 0,
+    category: seva.category ?? "seva",
     createdAt: seva.createdAt.toISOString(),
   };
 }
@@ -34,6 +36,8 @@ export type ReceiptItemDTO = {
   isCustom: boolean;
   bhaktaName?: string;
   bhaktaPhone?: string;
+  isKanike: boolean;
+  remark?: string;
 };
 
 export function displaySevaName(item: {
@@ -70,9 +74,42 @@ export function toReceiptDTO(receipt: Receipt): ReceiptDTO {
       isCustom: item.isCustom,
       bhaktaName: item.bhaktaName ?? undefined,
       bhaktaPhone: item.bhaktaPhone ?? undefined,
+      isKanike: item.isKanike ?? false,
+      remark: item.remark ?? undefined,
     })),
     total: receipt.total,
     createdAt: receipt.createdAt.toISOString(),
+  };
+}
+
+export type KanikeRowDTO = {
+  id: string;
+  receiptNo: number;
+  dbn: number;
+  businessDate: string;
+  createdAt: string;
+  sevaName: string;
+  amount: number;
+  bhaktaName?: string;
+  bhaktaPhone?: string;
+  remark?: string;
+};
+
+export function toKanikeRowDTO(receipt: Receipt): KanikeRowDTO | null {
+  const item = receipt.items.find((entry) => entry.isKanike);
+  if (!item) return null;
+
+  return {
+    id: receipt._id.toString(),
+    receiptNo: receipt.receiptNo,
+    dbn: receipt.dbn,
+    businessDate: receipt.businessDate,
+    createdAt: receipt.createdAt.toISOString(),
+    sevaName: displaySevaName(item),
+    amount: item.amount,
+    bhaktaName: item.bhaktaName ?? undefined,
+    bhaktaPhone: item.bhaktaPhone ?? undefined,
+    remark: item.remark ?? undefined,
   };
 }
 

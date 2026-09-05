@@ -240,7 +240,7 @@ function renderReceiptCanvas(
   if (customItems.length > 0) {
     y += 12;
     for (const item of customItems) {
-      const text = `${item.bhaktaName} has ${item.sevaName} ${formatCurrency(item.amount)}`;
+      const text = `${item.bhaktaName} has ${item.sevaName} ${formatCurrency(item.amount)}${item.remark ? ` — ${item.remark}` : ""}`;
       setFont(ctx, FONT_SMALL, false);
       const lines = wrapText(ctx, text, contentWidth);
       lines.forEach((line) => {

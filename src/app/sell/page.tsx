@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 export default async function SellPage() {
   await connectToDatabase();
   const [sevas, settings] = await Promise.all([
-    SevaModel.find({ active: true }).sort({ order: 1, createdAt: 1 }),
+    SevaModel.find({ active: true, category: { $ne: "kanike" } }).sort({ order: 1, createdAt: 1 }),
     getOrCreateSettings(),
   ]);
 

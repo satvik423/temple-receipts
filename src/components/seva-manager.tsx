@@ -197,7 +197,9 @@ export function SevaManager({ sevas: initialSevas }: { sevas: SevaDTO[] }) {
                   <div className="min-w-0 flex-1 basis-40">
                     <p className="truncate font-medium">{seva.name}</p>
                     <p className="text-sm text-muted-foreground">
-                      {seva.price === null ? (
+                      {seva.category === "kanike" ? (
+                        <Badge>Kanike</Badge>
+                      ) : seva.price === null ? (
                         <Badge variant="secondary">Custom</Badge>
                       ) : (
                         formatCurrency(seva.price)

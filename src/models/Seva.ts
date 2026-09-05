@@ -7,6 +7,7 @@ const SevaSchema = new Schema(
     price: { type: Number, default: null, min: 0 },
     active: { type: Boolean, default: true },
     order: { type: Number, default: 0 },
+    category: { type: String, enum: ["seva", "kanike"], default: "seva" },
   },
   { timestamps: true },
 );
