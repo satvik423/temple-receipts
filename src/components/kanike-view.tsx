@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { ChevronLeft, ChevronRight, Pencil } from "lucide-react";
+import { ChevronLeft, ChevronRight, Pencil, Printer } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -17,13 +17,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { PrinterConnectButton } from "@/components/printer-connect-button";
-import { ReceiptDocument } from "@/components/receipt-document";
 import { KanikeEditDialog } from "@/components/kanike-edit-dialog";
+import { KanikeReceiptDocument } from "@/components/kanike-receipt-document";
 import { formatCurrency } from "@/lib/format";
 import { formatReceiptDate, formatReceiptTime, shiftBusinessDate } from "@/lib/date";
-import { getAuthorizedPrinter, printReceiptToUsb } from "@/lib/thermal-printer";
-import type { KanikeRowDTO, ReceiptDTO, SevaDTO } from "@/lib/dto";
+import { displaySevaName, type KanikeRowDTO, type SevaDTO } from "@/lib/dto";
 
 const LAST_TYPE_STORAGE_KEY = "kanike:lastTypeId";
 
@@ -50,14 +48,8 @@ export function KanikeView({
   const [amount, setAmount] = React.useState("");
   const [selectedTypeId, setSelectedTypeId] = React.useState<string | null>(null);
   const [submitting, setSubmitting] = React.useState(false);
-  const [printing, setPrinting] = React.useState(false);
-  const [printerConnected, setPrinterConnected] = React.useState(true);
-  const [browserPrintJob, setBrowserPrintJob] = React.useState<ReceiptDTO | null>(null);
+  const [printJob, setPrintJob] = React.useState<KanikeRowDTO | null>(null);
   const [editingRow, setEditingRow] = React.useState<KanikeRowDTO | null>(null);
-
-  React.useEffect(() => {
-    getAuthorizedPrinter().then((device) => setPrinterConnected(device !== null));
-  }, []);
 
   React.useEffect(() => {
     Promise.resolve().then(() => {
@@ -84,30 +76,18 @@ export function KanikeView({
   }
 
   React.useEffect(() => {
-    if (!browserPrintJob) return;
+    if (!printJob) return;
     const timer = setTimeout(() => window.print(), 150);
     return () => clearTimeout(timer);
-  }, [browserPrintJob]);
+  }, [printJob]);
 
   React.useEffect(() => {
     function handleAfterPrint() {
-      setBrowserPrintJob(null);
+      setPrintJob(null);
     }
     window.addEventListener("afterprint", handleAfterPrint);
     return () => window.removeEventListener("afterprint", handleAfterPrint);
   }, []);
-
-  async function printBill(receipt: ReceiptDTO) {
-    setPrinting(true);
-    try {
-      await printReceiptToUsb(receipt, templeSettings);
-    } catch (err) {
-      console.warn("USB print failed, falling back to browser print:", err);
-      setBrowserPrintJob(receipt);
-    } finally {
-      setPrinting(false);
-    }
-  }
 
   function setDate(nextDate: string) {
     const params = new URLSearchParams(searchParams.toString());
@@ -121,11 +101,7 @@ export function KanikeView({
   }
 
   const canSubmit =
-    bhaktaName.trim().length > 0 &&
-    Number(amount) > 0 &&
-    selectedTypeId !== null &&
-    !submitting &&
-    !printing;
+    bhaktaName.trim().length > 0 && Number(amount) > 0 && selectedTypeId !== null && !submitting;
 
   async function handleSave() {
     if (!selectedTypeId) return;
@@ -159,7 +135,20 @@ export function KanikeView({
       setRemark("");
       setAmount("");
       toast.success(`Bill #${data.receiptNo} saved`);
-      await printBill(data);
+
+      const item = data.items[0];
+      setPrintJob({
+        id: data.id,
+        receiptNo: data.receiptNo,
+        dbn: data.dbn,
+        businessDate: data.businessDate,
+        createdAt: data.createdAt,
+        sevaName: displaySevaName(item),
+        amount: item.amount,
+        bhaktaName: item.bhaktaName,
+        bhaktaPhone: item.bhaktaPhone,
+        remark: item.remark,
+      });
       router.refresh();
     } finally {
       setSubmitting(false);
@@ -169,17 +158,6 @@ export function KanikeView({
   return (
     <div className="space-y-4">
       <h1 className="text-lg font-semibold print:hidden">Kanike</h1>
-
-      {!printerConnected ? (
-        <Card className="border-destructive/50 print:hidden">
-          <CardContent className="flex flex-wrap items-center justify-between gap-3 pt-6">
-            <p className="text-sm text-muted-foreground">
-              No printer connected — bills will be saved but won&apos;t print until you connect one.
-            </p>
-            <PrinterConnectButton onConnected={() => setPrinterConnected(true)} />
-          </CardContent>
-        </Card>
-      ) : null}
 
       <Card className="print:hidden">
         <CardHeader>
@@ -250,7 +228,7 @@ export function KanikeView({
           </div>
 
           <Button disabled={!canSubmit} onClick={handleSave}>
-            {submitting ? "Saving..." : printing ? "Printing..." : "Save & Print"}
+            {submitting ? "Saving..." : "Save & Print"}
           </Button>
         </CardContent>
       </Card>
@@ -331,6 +309,14 @@ export function KanikeView({
                           <Button
                             variant="ghost"
                             size="icon"
+                            aria-label={`Reprint kanike entry ${row.receiptNo}`}
+                            onClick={() => setPrintJob(row)}
+                          >
+                            <Printer className="size-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
                             aria-label={`Edit kanike entry ${row.receiptNo}`}
                             onClick={() => setEditingRow(row)}
                           >
@@ -353,9 +339,9 @@ export function KanikeView({
         onSaved={() => router.refresh()}
       />
 
-      {browserPrintJob ? (
+      {printJob ? (
         <div className="hidden print:block">
-          <ReceiptDocument receipt={browserPrintJob} templeSettings={templeSettings} />
+          <KanikeReceiptDocument row={printJob} templeSettings={templeSettings} />
         </div>
       ) : null}
     </div>
