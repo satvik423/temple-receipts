@@ -45,6 +45,7 @@ export function KanikeView({
 
   const [bhaktaName, setBhaktaName] = React.useState("");
   const [bhaktaPhone, setBhaktaPhone] = React.useState("");
+  const [bhaktaAddress, setBhaktaAddress] = React.useState("");
   const [remark, setRemark] = React.useState("");
   const [amount, setAmount] = React.useState("");
   const [onlinePay, setOnlinePay] = React.useState(false);
@@ -119,6 +120,7 @@ export function KanikeView({
               amount: Number(amount),
               bhaktaName: bhaktaName.trim(),
               bhaktaPhone: bhaktaPhone.trim(),
+              bhaktaAddress: bhaktaAddress.trim(),
               remark: remark.trim(),
               isOnlinePay: onlinePay,
             },
@@ -135,6 +137,7 @@ export function KanikeView({
 
       setBhaktaName("");
       setBhaktaPhone("");
+      setBhaktaAddress("");
       setRemark("");
       setAmount("");
       setOnlinePay(false);
@@ -152,6 +155,7 @@ export function KanikeView({
         amount: item.amount,
         bhaktaName: item.bhaktaName,
         bhaktaPhone: item.bhaktaPhone,
+        bhaktaAddress: item.bhaktaAddress,
         remark: item.remark,
         isOnlinePay: item.isOnlinePay,
       });
@@ -190,6 +194,16 @@ export function KanikeView({
                 maxLength={15}
                 value={bhaktaPhone}
                 onChange={(e) => setBhaktaPhone(e.target.value.replace(/\D/g, ""))}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="kanike-address">
+                Address <span className="text-muted-foreground">(optional)</span>
+              </Label>
+              <Input
+                id="kanike-address"
+                value={bhaktaAddress}
+                onChange={(e) => setBhaktaAddress(e.target.value)}
               />
             </div>
             <div className="space-y-1.5">
@@ -298,6 +312,7 @@ export function KanikeView({
                     <TableHead>Time</TableHead>
                     <TableHead>Bhakta Name</TableHead>
                     <TableHead>Phone</TableHead>
+                    <TableHead>Address</TableHead>
                     <TableHead>Type</TableHead>
                     <TableHead>Remark</TableHead>
                     <TableHead>Payment</TableHead>
@@ -316,6 +331,9 @@ export function KanikeView({
                         <TableCell>{formatReceiptTime(createdAt)}</TableCell>
                         <TableCell>{row.bhaktaName}</TableCell>
                         <TableCell>{row.bhaktaPhone || "—"}</TableCell>
+                        <TableCell className="max-w-[200px] truncate text-muted-foreground">
+                          {row.bhaktaAddress || "—"}
+                        </TableCell>
                         <TableCell>{row.sevaName}</TableCell>
                         <TableCell className="max-w-[200px] truncate text-muted-foreground">
                           {row.remark || "—"}

@@ -11,6 +11,7 @@ const ReceiptItemSchema = new Schema(
     isCustom: { type: Boolean, required: true, default: false },
     bhaktaName: { type: String },
     bhaktaPhone: { type: String },
+    bhaktaAddress: { type: String },
     isKanike: { type: Boolean, default: false },
     remark: { type: String },
     isOnlinePay: { type: Boolean, default: false },

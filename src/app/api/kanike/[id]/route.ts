@@ -27,6 +27,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     return NextResponse.json({ error: "Name is required" }, { status: 400 });
   }
   const bhaktaPhone = typeof body?.bhaktaPhone === "string" ? body.bhaktaPhone.trim() : "";
+  const bhaktaAddress = typeof body?.bhaktaAddress === "string" ? body.bhaktaAddress.trim() : "";
   const remark = typeof body?.remark === "string" ? body.remark.trim() : "";
 
   const item = receipt.items[0];
@@ -47,6 +48,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
   item.bhaktaName = bhaktaName;
   item.bhaktaPhone = bhaktaPhone || undefined;
+  item.bhaktaAddress = bhaktaAddress || undefined;
   item.remark = remark || undefined;
 
   await receipt.save();

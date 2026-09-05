@@ -33,6 +33,7 @@ export function KanikeReceiptDocument({
       <p className={styles.field}>Name: {row.bhaktaName}</p>
       <p className={styles.field}>Kanike Name: {row.sevaName}</p>
       <p className={styles.field}>Phone: {row.bhaktaPhone || "-"}</p>
+      {row.bhaktaAddress ? <p className={styles.field}>Address: {row.bhaktaAddress}</p> : null}
       <p className={styles.field}>A sum of Rupees {amountToWords(row.amount)}</p>
 
       <div className={styles.footer}>

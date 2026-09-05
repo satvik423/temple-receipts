@@ -59,6 +59,7 @@ function KanikeEditForm({
 }) {
   const [bhaktaName, setBhaktaName] = React.useState(row.bhaktaName ?? "");
   const [bhaktaPhone, setBhaktaPhone] = React.useState(row.bhaktaPhone ?? "");
+  const [bhaktaAddress, setBhaktaAddress] = React.useState(row.bhaktaAddress ?? "");
   const [remark, setRemark] = React.useState(row.remark ?? "");
   const [sevaId, setSevaId] = React.useState(row.sevaId);
   const [onlinePay, setOnlinePay] = React.useState(row.isOnlinePay);
@@ -77,6 +78,7 @@ function KanikeEditForm({
         body: JSON.stringify({
           bhaktaName: bhaktaName.trim(),
           bhaktaPhone: bhaktaPhone.trim(),
+          bhaktaAddress: bhaktaAddress.trim(),
           remark: remark.trim(),
           sevaId,
           isOnlinePay: onlinePay,
@@ -121,6 +123,16 @@ function KanikeEditForm({
           maxLength={15}
           value={bhaktaPhone}
           onChange={(e) => setBhaktaPhone(e.target.value.replace(/\D/g, ""))}
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="kanike-edit-address">
+          Address <span className="text-muted-foreground">(optional)</span>
+        </Label>
+        <Input
+          id="kanike-edit-address"
+          value={bhaktaAddress}
+          onChange={(e) => setBhaktaAddress(e.target.value)}
         />
       </div>
       <div className="space-y-2">

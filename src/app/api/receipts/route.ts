@@ -12,6 +12,7 @@ type IncomingItem = {
   amount?: number;
   bhaktaName?: string;
   bhaktaPhone?: string;
+  bhaktaAddress?: string;
   remark?: string;
   isOnlinePay?: boolean;
 };
@@ -48,6 +49,7 @@ export async function POST(request: Request) {
       const amount = Number(incoming.amount);
       const bhaktaName = incoming.bhaktaName?.trim();
       const bhaktaPhone = incoming.bhaktaPhone?.trim();
+      const bhaktaAddress = incoming.bhaktaAddress?.trim() || undefined;
       const remark = incoming.remark?.trim() || undefined;
 
       if (!Number.isFinite(amount) || amount <= 0) {
@@ -73,6 +75,7 @@ export async function POST(request: Request) {
         isCustom: true,
         bhaktaName,
         bhaktaPhone,
+        bhaktaAddress,
         isKanike: seva.category === "kanike",
         remark,
         isOnlinePay: incoming.isOnlinePay === true,

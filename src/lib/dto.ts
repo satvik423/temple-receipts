@@ -36,6 +36,7 @@ export type ReceiptItemDTO = {
   isCustom: boolean;
   bhaktaName?: string;
   bhaktaPhone?: string;
+  bhaktaAddress?: string;
   isKanike: boolean;
   remark?: string;
   isOnlinePay: boolean;
@@ -75,6 +76,7 @@ export function toReceiptDTO(receipt: Receipt): ReceiptDTO {
       isCustom: item.isCustom,
       bhaktaName: item.bhaktaName ?? undefined,
       bhaktaPhone: item.bhaktaPhone ?? undefined,
+      bhaktaAddress: item.bhaktaAddress ?? undefined,
       isKanike: item.isKanike ?? false,
       remark: item.remark ?? undefined,
       isOnlinePay: item.isOnlinePay ?? false,
@@ -95,6 +97,7 @@ export type KanikeRowDTO = {
   amount: number;
   bhaktaName?: string;
   bhaktaPhone?: string;
+  bhaktaAddress?: string;
   remark?: string;
   isOnlinePay: boolean;
 };
@@ -114,6 +117,7 @@ export function toKanikeRowDTO(receipt: Receipt): KanikeRowDTO | null {
     amount: item.amount,
     bhaktaName: item.bhaktaName ?? undefined,
     bhaktaPhone: item.bhaktaPhone ?? undefined,
+    bhaktaAddress: item.bhaktaAddress ?? undefined,
     remark: item.remark ?? undefined,
     isOnlinePay: item.isOnlinePay ?? false,
   };
