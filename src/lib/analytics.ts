@@ -144,6 +144,45 @@ export async function getRevenueSeries(
   return points;
 }
 
+export type SinglePeriod = { start: string; end: string; label: string };
+
+function lastDayOfMonth(year: number, month: number): string {
+  // day 0 of the next month is the last day of this one
+  return getBusinessDate(new Date(Date.UTC(year, month, 0)));
+}
+
+/** Bounds + label for exactly one daily/weekly/monthly/yearly bucket, `offset` buckets back from today. */
+export function getSinglePeriod(range: RevenueRange, today: string, offset: number): SinglePeriod {
+  if (range === "daily") {
+    const date = addDays(today, -offset);
+    const [, month, day] = date.split("-");
+    return { start: date, end: date, label: `${day}/${month}` };
+  }
+
+  if (range === "weekly") {
+    const start = addDays(getIsoWeekStart(today), -7 * offset);
+    const end = addDays(start, 6);
+    const [, sm, sd] = start.split("-");
+    const [, em, ed] = end.split("-");
+    return { start, end, label: `${sd}/${sm} – ${ed}/${em}` };
+  }
+
+  if (range === "monthly") {
+    const [year, month] = today.split("-").map(Number);
+    const monthIndex = year * 12 + (month - 1) - offset;
+    const y = Math.floor(monthIndex / 12);
+    const m = (monthIndex % 12) + 1;
+    return {
+      start: `${y}-${String(m).padStart(2, "0")}-01`,
+      end: lastDayOfMonth(y, m),
+      label: `${MONTH_LABELS[m - 1]} ${y}`,
+    };
+  }
+
+  const year = Number(today.slice(0, 4)) - offset;
+  return { start: `${year}-01-01`, end: `${year}-12-31`, label: String(year) };
+}
+
 export async function getSevaBreakdown(
   startDate: string,
   endDate: string,
