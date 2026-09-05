@@ -1,5 +1,7 @@
 import fs from "fs";
 import path from "path";
+import chromium from "@sparticuz/chromium";
+import puppeteerCore from "puppeteer-core";
 import puppeteer from "puppeteer";
 
 export { resolveReportPeriod, groupReceiptsByDate } from "@/lib/report-period";
@@ -141,8 +143,22 @@ export function buildReportDocument(options: {
 </html>`;
 }
 
+async function launchBrowser() {
+  // Vercel's serverless functions don't have a system Chromium install (or the shared
+  // libraries full `puppeteer` expects), so use the Lambda-compatible build there. Locally
+  // (and on any other Node host), the full `puppeteer` package's bundled Chromium works fine.
+  if (process.env.VERCEL) {
+    return puppeteerCore.launch({
+      args: chromium.args,
+      executablePath: await chromium.executablePath(),
+      headless: true,
+    });
+  }
+  return puppeteer.launch({ headless: true, args: ["--no-sandbox"] });
+}
+
 export async function renderHtmlToPdf(html: string): Promise<Buffer> {
-  const browser = await puppeteer.launch({ headless: true, args: ["--no-sandbox"] });
+  const browser = await launchBrowser();
   try {
     const page = await browser.newPage();
     await page.setContent(html, { waitUntil: "load" });

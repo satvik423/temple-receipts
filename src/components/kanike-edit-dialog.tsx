@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { getBusinessDate } from "@/lib/date";
 import type { KanikeRowDTO, SevaDTO } from "@/lib/dto";
 
 export function KanikeEditDialog({
@@ -25,7 +26,7 @@ export function KanikeEditDialog({
   row: KanikeRowDTO | null;
   kanikeTypes: SevaDTO[];
   onOpenChange: (open: boolean) => void;
-  onSaved: () => void;
+  onSaved: (newBusinessDate: string) => void;
 }) {
   return (
     <Dialog open={row !== null} onOpenChange={onOpenChange}>
@@ -55,7 +56,7 @@ function KanikeEditForm({
   row: KanikeRowDTO;
   kanikeTypes: SevaDTO[];
   onOpenChange: (open: boolean) => void;
-  onSaved: () => void;
+  onSaved: (newBusinessDate: string) => void;
 }) {
   const [bhaktaName, setBhaktaName] = React.useState(row.bhaktaName ?? "");
   const [bhaktaPhone, setBhaktaPhone] = React.useState(row.bhaktaPhone ?? "");
@@ -63,6 +64,7 @@ function KanikeEditForm({
   const [remark, setRemark] = React.useState(row.remark ?? "");
   const [sevaId, setSevaId] = React.useState(row.sevaId);
   const [onlinePay, setOnlinePay] = React.useState(row.isOnlinePay);
+  const [businessDate, setBusinessDate] = React.useState(row.businessDate);
   const [error, setError] = React.useState<string | null>(null);
   const [submitting, setSubmitting] = React.useState(false);
 
@@ -82,24 +84,26 @@ function KanikeEditForm({
           remark: remark.trim(),
           sevaId,
           isOnlinePay: onlinePay,
+          businessDate,
         }),
       });
 
+      const data = await res.json().catch(() => null);
+
       if (!res.ok) {
-        const data = await res.json().catch(() => null);
         setError(data?.error ?? "Something went wrong");
         return;
       }
 
       toast.success("Kanike entry updated");
       onOpenChange(false);
-      onSaved();
+      onSaved(data.businessDate);
     } finally {
       setSubmitting(false);
     }
   }
 
-  const canSubmit = bhaktaName.trim().length > 0;
+  const canSubmit = bhaktaName.trim().length > 0 && businessDate.length > 0;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -110,6 +114,16 @@ function KanikeEditForm({
           value={bhaktaName}
           onChange={(e) => setBhaktaName(e.target.value)}
           autoFocus
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="kanike-edit-date">Date</Label>
+        <Input
+          id="kanike-edit-date"
+          type="date"
+          max={getBusinessDate()}
+          value={businessDate}
+          onChange={(e) => e.target.value && setBusinessDate(e.target.value)}
         />
       </div>
       <div className="space-y-2">

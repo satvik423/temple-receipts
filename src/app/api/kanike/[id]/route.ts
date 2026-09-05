@@ -3,7 +3,11 @@ import { requireUser } from "@/lib/auth";
 import { connectToDatabase } from "@/lib/mongodb";
 import { ReceiptModel } from "@/models/Receipt";
 import { SevaModel } from "@/models/Seva";
+import { getNextSequence } from "@/models/Counter";
 import { toReceiptDTO } from "@/lib/dto";
+import { getBusinessDate, withBusinessDate } from "@/lib/date";
+
+const BUSINESS_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   await requireUser();
@@ -44,6 +48,20 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
   if (body?.isOnlinePay !== undefined) {
     item.isOnlinePay = body.isOnlinePay === true;
+  }
+
+  if (body?.businessDate !== undefined) {
+    if (typeof body.businessDate !== "string" || !BUSINESS_DATE_PATTERN.test(body.businessDate)) {
+      return NextResponse.json({ error: "Invalid date" }, { status: 400 });
+    }
+    if (body.businessDate > getBusinessDate()) {
+      return NextResponse.json({ error: "Date cannot be in the future" }, { status: 400 });
+    }
+    if (body.businessDate !== receipt.businessDate) {
+      receipt.createdAt = withBusinessDate(receipt.createdAt, body.businessDate);
+      receipt.businessDate = body.businessDate;
+      receipt.dbn = await getNextSequence(`dbn:${body.businessDate}`);
+    }
   }
 
   item.bhaktaName = bhaktaName;

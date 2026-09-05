@@ -52,3 +52,17 @@ export function shiftBusinessDate(businessDate: string, days: number): string {
   date.setUTCDate(date.getUTCDate() + days);
   return date.toISOString().slice(0, 10);
 }
+
+/** Moves `createdAt` onto `newBusinessDate`, keeping its original IST time-of-day. */
+export function withBusinessDate(createdAt: Date, newBusinessDate: string): Date {
+  const [hour, minute, second] = new Intl.DateTimeFormat("en-GB", {
+    timeZone: TEMPLE_TIME_ZONE,
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  })
+    .format(createdAt)
+    .split(":");
+  return new Date(`${newBusinessDate}T${hour}:${minute}:${second}+05:30`);
+}

@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Pencil, Printer } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -23,12 +23,15 @@ export function KanikeTable({
   rows,
   kanikeTypes,
   templeSettings,
+  date,
 }: {
   rows: KanikeRowDTO[];
   kanikeTypes: SevaDTO[];
   templeSettings: TempleHeaderDTO;
+  date: string;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [printJob, setPrintJob] = React.useState<KanikeRowDTO | null>(null);
   const [editingRow, setEditingRow] = React.useState<KanikeRowDTO | null>(null);
 
@@ -137,7 +140,13 @@ export function KanikeTable({
         row={editingRow}
         kanikeTypes={kanikeTypes}
         onOpenChange={(open) => !open && setEditingRow(null)}
-        onSaved={() => router.refresh()}
+        onSaved={(newBusinessDate) => {
+          if (newBusinessDate !== date) {
+            router.push(`${pathname}?date=${newBusinessDate}`);
+          } else {
+            router.refresh();
+          }
+        }}
       />
 
       {printJob ? (

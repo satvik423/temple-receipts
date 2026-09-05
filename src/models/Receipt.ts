@@ -26,6 +26,9 @@ const ReceiptSchema = new Schema(
     businessDate: { type: String, required: true, index: true },
     items: { type: [ReceiptItemSchema], required: true },
     total: { type: Number, required: true, min: 0 },
+    // Mongoose marks `timestamps: true`'s createdAt immutable by default; declare
+    // it explicitly (mutable) so a Kanike entry's date can be corrected after the fact.
+    createdAt: { type: Date, immutable: false },
   },
   { timestamps: true },
 );

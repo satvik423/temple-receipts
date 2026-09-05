@@ -20,6 +20,7 @@ export async function KanikeData({ date, kanikeTypes }: { date: string; kanikeTy
     <KanikeTable
       rows={rows}
       kanikeTypes={kanikeTypes}
+      date={date}
       templeSettings={{
         name: settings.name,
         place: settings.place,
