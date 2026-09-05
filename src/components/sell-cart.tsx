@@ -240,8 +240,8 @@ export function SellCart({
                         }
                         className="flex flex-col items-start gap-1 rounded-lg border p-3 text-left transition-colors hover:bg-secondary/60"
                       >
-                        <span className="text-sm font-medium">{seva.name}</span>
-                        <span className="text-xs text-muted-foreground">
+                        <span className="text-lg font-bold">{seva.name}</span>
+                        <span className="text-base font-bold text-muted-foreground">
                           {seva.price === null ? "Custom amount" : formatCurrency(seva.price)}
                         </span>
                       </button>
@@ -395,8 +395,8 @@ export function SellCart({
                       <div key={seva.id} className="p-3">
                         <div className="flex flex-wrap items-center gap-3">
                           <div className="min-w-0 flex-1 basis-40">
-                            <p className="truncate font-medium">{seva.name}</p>
-                            <p className="text-sm text-muted-foreground">
+                            <p className="truncate text-lg font-bold">{seva.name}</p>
+                            <p className="text-base font-bold text-muted-foreground">
                               {isCustomSeva ? "Custom amount" : formatCurrency(seva.price!)}
                             </p>
                           </div>
