@@ -11,6 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { KanikeReceiptDocument } from "@/components/kanike-receipt-document";
+import { KanikeReportDialog } from "@/components/kanike-report-dialog";
 import { shiftBusinessDate } from "@/lib/date";
 import { displaySevaName, type KanikeRowDTO, type SevaDTO, type TempleHeaderDTO } from "@/lib/dto";
 
@@ -172,7 +173,13 @@ export function KanikeShell({
 
   return (
     <div className="space-y-4">
-      <h1 className="text-lg font-semibold print:hidden">Kanike</h1>
+      <div className="flex flex-wrap items-center justify-between gap-3 print:hidden">
+        <h1 className="text-lg font-semibold">Kanike</h1>
+        <div className="flex items-center gap-2">
+          <KanikeReportDialog today={today} format="pdf" triggerLabel="PDF" />
+          <KanikeReportDialog today={today} format="xlsx" triggerLabel="Excel" />
+        </div>
+      </div>
 
       <Card className="print:hidden">
         <CardHeader>

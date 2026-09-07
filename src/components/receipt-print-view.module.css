@@ -37,6 +37,10 @@
   overflow-wrap: break-word;
 }
 
+.itemName {
+  font-size: 20px;
+}
+
 .qty {
   width: 26px;
   flex-shrink: 0;

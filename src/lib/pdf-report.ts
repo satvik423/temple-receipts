@@ -130,6 +130,10 @@ export function buildReportDocument(options: {
   th.qty {
     text-align: center;
   }
+  td.center,
+  th.center {
+    text-align: center;
+  }
 </style>
 </head>
 <body>
