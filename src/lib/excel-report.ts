@@ -1,6 +1,6 @@
 import ExcelJS from "exceljs";
 
-import { displaySevaName } from "@/lib/dto";
+import { displaySevaName, formatBhaktaDetail, toKanikeRowDTO, type KanikeRowDTO } from "@/lib/dto";
 import { formatBusinessDate } from "@/lib/date";
 import { groupReceiptsByDate } from "@/lib/report-period";
 import type { Receipt } from "@/models/Receipt";
@@ -39,6 +39,15 @@ const SUMMARY_COLUMNS: ColumnDef[] = [
   { label: "NAME", width: 36, align: "left" },
   { label: "QTY", width: 10, align: "center" },
   { label: "AMOUNT", width: 18, align: "right", numberFormat: "#,##0.00" },
+];
+
+const KANIKE_COLUMNS: ColumnDef[] = [
+  { label: "GBN", width: 10, align: "center" },
+  { label: "DBN", width: 10, align: "center" },
+  { label: "KANIKE NAME", width: 20, align: "left" },
+  { label: "BHAKTHA DETAIL", width: 44, align: "left" },
+  { label: "PAYMENT", width: 12, align: "center" },
+  { label: "AMOUNT", width: 16, align: "right", numberFormat: "#,##0.00" },
 ];
 
 function applyHeader(
@@ -332,6 +341,91 @@ function buildSummaryWorkbook(
   return workbook;
 }
 
+function buildKanikeWorkbook(
+  receipts: Receipt[],
+  templeSettings: TempleSettings,
+  title: string,
+): ExcelJS.Workbook {
+  const workbook = new ExcelJS.Workbook();
+  workbook.creator = templeSettings.name;
+  workbook.created = new Date();
+
+  const worksheet = workbook.addWorksheet("Kanike Report");
+  applyHeader(worksheet, templeSettings, title, KANIKE_COLUMNS);
+
+  const totalCols = KANIKE_COLUMNS.length;
+  const amountCol = 6; // AMOUNT
+  let rowIndex = 8;
+  let grandTotal = 0;
+
+  const groups = groupReceiptsByDate(receipts);
+  for (const [businessDate, group] of groups) {
+    const rows = group.map(toKanikeRowDTO).filter((row): row is KanikeRowDTO => row !== null);
+    if (rows.length === 0) continue;
+
+    const gbns = rows.map((r) => r.receiptNo);
+    const startGbn = Math.min(...gbns);
+    const endGbn = Math.max(...gbns);
+    const dayTotal = rows.reduce((sum, r) => sum + r.amount, 0);
+    grandTotal += dayTotal;
+
+    writeDateGroupHeader(
+      worksheet,
+      rowIndex,
+      totalCols,
+      `${formatBusinessDate(businessDate)}   R.No ${startGbn} - ${endGbn}`,
+    );
+    rowIndex += 1;
+
+    for (const row of rows) {
+      const excelRow = worksheet.getRow(rowIndex);
+      const values: Array<string | number> = [
+        row.receiptNo,
+        row.dbn,
+        row.sevaName,
+        formatBhaktaDetail(row),
+        row.isOnlinePay ? "Online" : "Cash",
+        row.amount,
+      ];
+      values.forEach((value, index) => {
+        const cell = excelRow.getCell(index + 1);
+        cell.value = value;
+        styleDataCell(cell, KANIKE_COLUMNS[index]);
+      });
+      excelRow.commit();
+      rowIndex += 1;
+    }
+
+    styleTotalRow(worksheet, rowIndex, totalCols, dayTotal, amountCol);
+    // Put the word "TOTAL" in the KANIKE NAME column (index 3) of the total row.
+    const totalLabelCell = worksheet.getRow(rowIndex).getCell(3);
+    totalLabelCell.value = "TOTAL";
+    totalLabelCell.alignment = { horizontal: "right", vertical: "middle" };
+    rowIndex += 1;
+  }
+
+  // Grand total row.
+  const grandRow = worksheet.getRow(rowIndex);
+  for (let col = 1; col <= totalCols; col += 1) {
+    const cell = grandRow.getCell(col);
+    cell.font = { bold: true, size: 12 };
+    cell.border = THIN_BORDER;
+    if (col === 3) {
+      cell.value = "GRAND TOTAL";
+      cell.alignment = { horizontal: "right", vertical: "middle" };
+    } else if (col === amountCol) {
+      cell.value = grandTotal;
+      cell.numFmt = "#,##0.00";
+      cell.alignment = { horizontal: "right", vertical: "middle" };
+    } else {
+      cell.alignment = { horizontal: "left", vertical: "middle" };
+    }
+  }
+  grandRow.commit();
+
+  return workbook;
+}
+
 export async function excelDownloadResponse(
   workbook: ExcelJS.Workbook,
   filename: string,
@@ -349,4 +443,5 @@ export async function excelDownloadResponse(
 export const excelReport = {
   bill: buildBillWorkbook,
   summary: buildSummaryWorkbook,
+  kanike: buildKanikeWorkbook,
 };

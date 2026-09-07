@@ -130,6 +130,14 @@ export function toKanikeRowDTO(receipt: Receipt): KanikeRowDTO | null {
   };
 }
 
+export function formatBhaktaDetail(
+  row: Pick<KanikeRowDTO, "bhaktaName" | "bhaktaPhone" | "bhaktaAddress" | "remark">,
+): string {
+  return [row.bhaktaName, row.bhaktaPhone, row.bhaktaAddress, row.remark]
+    .filter((part): part is string => Boolean(part && part.trim().length > 0))
+    .join(", ");
+}
+
 export type UserDTO = {
   id: string;
   email: string;

@@ -48,7 +48,7 @@ export function ReceiptDocument({
 
       {receipt.items.map((item, index) => (
         <div key={index} className={styles.row}>
-          <span className={styles.item}>{item.sevaName}</span>
+          <span className={`${styles.item} ${styles.itemName}`}>{item.sevaName}</span>
           <span className={styles.qty}>{item.quantity}</span>
           <span className={styles.amount}>{formatCurrency(item.amount)}</span>
         </div>
