@@ -70,6 +70,10 @@ export function KanikeReceiptDocument({
         </div>
 
         <p className={styles.field}>
+          Remark <span className={styles.filled}>{row.remark || "-"}</span>
+        </p>
+
+        <p className={styles.field}>
           a sum of Rupees <span className={styles.filled}>{amountToWords(row.amount)}</span>
         </p>
 
