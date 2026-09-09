@@ -14,8 +14,11 @@ const PAD = 16;
 const FONT_NORMAL = 28;
 const FONT_SMALL = 22;
 const FONT_TOTAL = 32;
+// Matches the 20px/12px ratio the CSS print preview uses for item names (receipt-print-view.module.css .itemName)
+const FONT_ITEM_NAME = Math.round(FONT_NORMAL * (20 / 12));
 const LINE_H = 34;
 const LINE_H_SMALL = 26;
+const LINE_H_ITEM_NAME = Math.round(LINE_H * (FONT_ITEM_NAME / FONT_NORMAL));
 const QTY_COL_WIDTH = 60;
 const AMOUNT_COL_WIDTH = 130;
 
@@ -191,20 +194,29 @@ async function renderReceiptCanvas(
     y += LINE_H;
   }
 
-  function tableRow(name: string, qty: string, amount: string, size = FONT_NORMAL) {
-    setFont(ctx, size);
+  function tableRow(
+    name: string,
+    qty: string,
+    amount: string,
+    size = FONT_NORMAL,
+    nameSize = size,
+  ) {
+    setFont(ctx, nameSize);
     const lines = wrapText(ctx, name, nameColWidth);
+    const lineHeight =
+      nameSize === FONT_TOTAL ? LINE_H + 6 : nameSize === FONT_ITEM_NAME ? LINE_H_ITEM_NAME : LINE_H;
     lines.forEach((line, index) => {
-      setFont(ctx, size);
+      setFont(ctx, nameSize);
       ctx.textAlign = "left";
       ctx.fillText(line, PAD, y);
       if (index === 0) {
+        setFont(ctx, size);
         ctx.textAlign = "center";
         ctx.fillText(qty, PAD + nameColWidth + QTY_COL_WIDTH / 2, y);
         ctx.textAlign = "right";
         ctx.fillText(amount, width - PAD, y);
       }
-      y += size === FONT_TOTAL ? LINE_H + 6 : LINE_H;
+      y += lineHeight;
     });
   }
 
@@ -236,7 +248,13 @@ async function renderReceiptCanvas(
   solidLine();
 
   for (const item of receipt.items) {
-    tableRow(item.sevaName, String(item.quantity), formatCurrency(item.amount));
+    tableRow(
+      item.sevaName,
+      String(item.quantity),
+      formatCurrency(item.amount),
+      FONT_NORMAL,
+      FONT_ITEM_NAME,
+    );
   }
 
   const customItems = receipt.items.filter((item) => item.isCustom);
