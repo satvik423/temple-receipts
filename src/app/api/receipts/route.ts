@@ -15,6 +15,7 @@ type IncomingItem = {
   bhaktaAddress?: string;
   remark?: string;
   isOnlinePay?: boolean;
+  noMoney?: boolean;
 };
 
 export async function POST(request: Request) {
@@ -46,13 +47,15 @@ export async function POST(request: Request) {
     const isCustom = seva.price === null || seva.price === undefined;
 
     if (isCustom) {
-      const amount = Number(incoming.amount);
+      const isKanike = seva.category === "kanike";
+      const noMoney = isKanike && incoming.noMoney === true;
+      const amount = noMoney ? 0 : Number(incoming.amount);
       const bhaktaName = incoming.bhaktaName?.trim();
       const bhaktaPhone = incoming.bhaktaPhone?.trim();
       const bhaktaAddress = incoming.bhaktaAddress?.trim() || undefined;
       const remark = incoming.remark?.trim() || undefined;
 
-      if (!Number.isFinite(amount) || amount <= 0) {
+      if (!noMoney && (!Number.isFinite(amount) || amount <= 0)) {
         return NextResponse.json(
           { error: `Enter a valid amount for ${seva.name}` },
           { status: 400 },
@@ -76,7 +79,7 @@ export async function POST(request: Request) {
         bhaktaName,
         bhaktaPhone,
         bhaktaAddress,
-        isKanike: seva.category === "kanike",
+        isKanike,
         remark,
         isOnlinePay: incoming.isOnlinePay === true,
       });

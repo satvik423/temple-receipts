@@ -39,6 +39,7 @@ export function KanikeShell({
   const [bhaktaAddress, setBhaktaAddress] = React.useState("");
   const [remark, setRemark] = React.useState("");
   const [amount, setAmount] = React.useState("");
+  const [noMoney, setNoMoney] = React.useState(false);
   const [onlinePay, setOnlinePay] = React.useState(false);
   const [selectedTypeId, setSelectedTypeId] = React.useState<string | null>(null);
   const [submitting, setSubmitting] = React.useState(false);
@@ -110,7 +111,10 @@ export function KanikeShell({
   }
 
   const canSubmit =
-    bhaktaName.trim().length > 0 && Number(amount) > 0 && selectedTypeId !== null && !submitting;
+    bhaktaName.trim().length > 0 &&
+    (noMoney || Number(amount) > 0) &&
+    selectedTypeId !== null &&
+    !submitting;
 
   async function handleSave() {
     if (!selectedTypeId) return;
@@ -123,7 +127,8 @@ export function KanikeShell({
           items: [
             {
               sevaId: selectedTypeId,
-              amount: Number(amount),
+              amount: noMoney ? 0 : Number(amount),
+              noMoney,
               bhaktaName: bhaktaName.trim(),
               bhaktaPhone: bhaktaPhone.trim(),
               bhaktaAddress: bhaktaAddress.trim(),
@@ -146,6 +151,7 @@ export function KanikeShell({
       setBhaktaAddress("");
       setRemark("");
       setAmount("");
+      setNoMoney(false);
       setOnlinePay(false);
       toast.success(`Bill #${data.receiptNo} saved`);
 
@@ -231,21 +237,42 @@ export function KanikeShell({
                 type="number"
                 min={0}
                 step="1"
-                value={amount}
+                value={noMoney ? "0" : amount}
                 onChange={(e) => setAmount(e.target.value)}
+                disabled={noMoney}
               />
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <Checkbox
-              id="kanike-online-pay"
-              checked={onlinePay}
-              onCheckedChange={(checked) => setOnlinePay(checked === true)}
-            />
-            <Label htmlFor="kanike-online-pay" className="font-normal">
-              Online Pay
-            </Label>
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="kanike-no-money"
+                checked={noMoney}
+                onCheckedChange={(checked) => {
+                  const isNoMoney = checked === true;
+                  setNoMoney(isNoMoney);
+                  if (isNoMoney) {
+                    setAmount("");
+                    setOnlinePay(false);
+                  }
+                }}
+              />
+              <Label htmlFor="kanike-no-money" className="font-normal">
+                Offering only (no money)
+              </Label>
+            </div>
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="kanike-online-pay"
+                checked={onlinePay}
+                onCheckedChange={(checked) => setOnlinePay(checked === true)}
+                disabled={noMoney}
+              />
+              <Label htmlFor="kanike-online-pay" className="font-normal">
+                Online Pay
+              </Label>
+            </div>
           </div>
 
           <div className="space-y-1.5">
