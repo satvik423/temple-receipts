@@ -27,6 +27,7 @@ export function KanikeThermalReportDocument({
         <p>
           {formatReceiptDate(generatedAt)} {formatReceiptTime(generatedAt)}
         </p>
+        <p>{report.periodLabel}</p>
       </div>
 
       <div className={styles.separator} />

@@ -37,7 +37,15 @@ export async function requestPrinter(): Promise<USBDevice> {
   if (!isWebUsbSupported()) {
     throw new Error("This browser does not support connecting to a USB printer.");
   }
-  return navigator.usb.requestDevice({ filters: [] });
+  const device = await navigator.usb.requestDevice({ filters: [] });
+
+  // getAuthorizedPrinter() always uses the first authorized device, so drop any
+  // previously authorized printer here — otherwise picking a new one in the dialog
+  // wouldn't actually switch which printer receives print jobs.
+  const others = await navigator.usb.getDevices();
+  await Promise.all(others.filter((d) => d !== device).map((d) => d.forget().catch(() => {})));
+
+  return device;
 }
 
 async function openForPrinting(
@@ -439,6 +447,7 @@ async function renderKanikeReportCanvas(
   centerText(`Mob: ${templeSettings.phone}`);
   dashedLine();
   centerText(`${formatReceiptDate(generatedAt)} ${formatReceiptTime(generatedAt)}`, FONT_SMALL);
+  centerText(report.periodLabel, FONT_SMALL);
   dashedLine();
   tableRow("ITEM", "QTY", "TOTAL");
   solidLine();
