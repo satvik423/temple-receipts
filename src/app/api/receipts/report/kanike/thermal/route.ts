@@ -16,7 +16,6 @@ export async function GET(request: Request) {
 
   const receipts = await ReceiptModel.find({
     ...period.query,
-    "items.isKanike": true,
   }).sort({ businessDate: 1, receiptNo: 1 });
 
   const report = buildKanikeThermalReport(receipts);

@@ -141,12 +141,12 @@ export function KanikeThermalReportDialog({
         <DialogTrigger asChild>
           <Button variant="outline">
             <Printer className="size-4" />
-            Kanike Report
+            PRINT
           </Button>
         </DialogTrigger>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Print Kanike Report</DialogTitle>
+            <DialogTitle>Print Report</DialogTitle>
           </DialogHeader>
 
           <Tabs value={type} onValueChange={(value) => setType(value as "month" | "range")}>

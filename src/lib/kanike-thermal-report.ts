@@ -1,44 +1,29 @@
 import type { Receipt } from "@/models/Receipt";
-import { toKanikeRowDTO, type KanikeRowDTO } from "@/lib/dto";
-import { groupReceiptsByDate } from "@/lib/report-period";
+import { displaySevaName } from "@/lib/dto";
 
-export type KanikeThermalItem = { name: string; total: number };
-export type KanikeThermalGroup = {
-  businessDate: string;
-  items: KanikeThermalItem[];
-  dayTotal: number;
-};
+export type KanikeThermalItem = { name: string; qty: number; total: number };
 export type KanikeThermalReport = {
-  groups: KanikeThermalGroup[];
+  items: KanikeThermalItem[];
   grandTotal: number;
 };
 
 export function buildKanikeThermalReport(receipts: Receipt[]): KanikeThermalReport {
-  const groupsByDate = groupReceiptsByDate(receipts);
-  const groups: KanikeThermalGroup[] = [];
+  const byName = new Map<string, KanikeThermalItem>();
   let grandTotal = 0;
 
-  for (const [businessDate, receiptsForDate] of groupsByDate) {
-    const rows = receiptsForDate
-      .map(toKanikeRowDTO)
-      .filter((row): row is KanikeRowDTO => row !== null);
-    if (rows.length === 0) continue;
-
-    const byName = new Map<string, KanikeThermalItem>();
-    for (const row of rows) {
-      const existing = byName.get(row.sevaName);
+  for (const receipt of receipts) {
+    for (const item of receipt.items) {
+      const name = displaySevaName(item);
+      const existing = byName.get(name);
       if (existing) {
-        existing.total += row.amount;
+        existing.qty += item.quantity;
+        existing.total += item.amount;
       } else {
-        byName.set(row.sevaName, { name: row.sevaName, total: row.amount });
+        byName.set(name, { name, qty: item.quantity, total: item.amount });
       }
+      grandTotal += item.amount;
     }
-
-    const items = Array.from(byName.values());
-    const dayTotal = items.reduce((sum, item) => sum + item.total, 0);
-    grandTotal += dayTotal;
-    groups.push({ businessDate, items, dayTotal });
   }
 
-  return { groups, grandTotal };
+  return { items: Array.from(byName.values()), grandTotal };
 }
