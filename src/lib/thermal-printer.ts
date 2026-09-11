@@ -1,5 +1,5 @@
 import { formatCurrency } from "@/lib/format";
-import { formatBusinessDate, formatReceiptDate, formatReceiptTime } from "@/lib/date";
+import { formatReceiptDate, formatReceiptTime } from "@/lib/date";
 import type { ReceiptDTO, TempleHeaderDTO } from "@/lib/dto";
 import type { KanikeThermalReport } from "@/lib/kanike-thermal-report";
 
@@ -359,8 +359,6 @@ export async function printReceiptToUsb(
   await sendToPrinter(device, data);
 }
 
-const KANIKE_TOTAL_COL_WIDTH = 140;
-
 async function renderKanikeReportCanvas(
   report: KanikeThermalReport,
   templeSettings: TempleHeaderDTO,
@@ -368,7 +366,7 @@ async function renderKanikeReportCanvas(
 ): Promise<HTMLCanvasElement> {
   const width = PRINTER_WIDTH_DOTS;
   const contentWidth = width - PAD * 2;
-  const nameColWidth = contentWidth - KANIKE_TOTAL_COL_WIDTH - 8;
+  const nameColWidth = contentWidth - QTY_COL_WIDTH - AMOUNT_COL_WIDTH - 16;
 
   try {
     await Promise.all([
@@ -381,8 +379,7 @@ async function renderKanikeReportCanvas(
 
   // Thermal paper is a continuous roll, so size the scratch canvas generously up front
   // (rather than the receipt's fixed 3000px) since a month/range report can run long.
-  const estimatedRows = report.groups.reduce((sum, group) => sum + group.items.length + 3, 0);
-  const scratchHeight = Math.max(3000, 300 + estimatedRows * 60);
+  const scratchHeight = Math.max(3000, 300 + report.items.length * 60);
 
   const scratch = document.createElement("canvas");
   scratch.width = width;
@@ -411,17 +408,27 @@ async function renderKanikeReportCanvas(
     y += 20;
   }
 
-  function row2(name: string, total: string, size = FONT_NORMAL) {
-    setFont(ctx, size);
+  function tableRow(
+    name: string,
+    qty: string,
+    amount: string,
+    size = FONT_NORMAL,
+    nameSize = size,
+  ) {
+    setFont(ctx, nameSize);
     const lines = wrapText(ctx, name, nameColWidth);
-    const lineHeight = size === FONT_TOTAL ? LINE_H + 6 : LINE_H;
+    const lineHeight =
+      nameSize === FONT_TOTAL ? LINE_H + 6 : nameSize === FONT_ITEM_NAME ? LINE_H_ITEM_NAME : LINE_H;
     lines.forEach((line, index) => {
-      setFont(ctx, size);
+      setFont(ctx, nameSize);
       ctx.textAlign = "left";
       ctx.fillText(line, PAD, y);
       if (index === 0) {
+        setFont(ctx, size);
+        ctx.textAlign = "center";
+        ctx.fillText(qty, PAD + nameColWidth + QTY_COL_WIDTH / 2, y);
         ctx.textAlign = "right";
-        ctx.fillText(total, width - PAD, y);
+        ctx.fillText(amount, width - PAD, y);
       }
       y += lineHeight;
     });
@@ -433,29 +440,15 @@ async function renderKanikeReportCanvas(
   dashedLine();
   centerText(`${formatReceiptDate(generatedAt)} ${formatReceiptTime(generatedAt)}`, FONT_SMALL);
   dashedLine();
-  row2("ITEM", "TOTAL");
+  tableRow("ITEM", "QTY", "TOTAL");
   solidLine();
 
-  for (const group of report.groups) {
-    setFont(ctx, FONT_SMALL, false);
-    ctx.textAlign = "left";
-    const dateLines = wrapText(ctx, formatBusinessDate(group.businessDate), contentWidth);
-    dateLines.forEach((line) => {
-      setFont(ctx, FONT_SMALL, false);
-      ctx.fillText(line, PAD, y);
-      y += LINE_H_SMALL;
-    });
-
-    for (const item of group.items) {
-      row2(item.name, formatCurrency(item.total));
-    }
-
-    row2("TOTAL", formatCurrency(group.dayTotal));
-    y += 10;
+  for (const item of report.items) {
+    tableRow(item.name, String(item.qty), formatCurrency(item.total), FONT_NORMAL, FONT_ITEM_NAME);
   }
 
   dashedLine();
-  row2("GRAND TOTAL", formatCurrency(report.grandTotal), FONT_TOTAL);
+  tableRow("GRAND TOTAL", "", formatCurrency(report.grandTotal), FONT_TOTAL);
 
   y += 40;
 

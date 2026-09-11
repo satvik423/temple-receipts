@@ -1,6 +1,7 @@
 import { requireAdmin } from "@/lib/auth";
 import { connectToDatabase } from "@/lib/mongodb";
 import { ReceiptModel } from "@/models/Receipt";
+import { SevaModel } from "@/models/Seva";
 import { resolveReportPeriod } from "@/lib/report-period";
 import { buildKanikeThermalReport } from "@/lib/kanike-thermal-report";
 
@@ -14,11 +15,15 @@ export async function GET(request: Request) {
 
   await connectToDatabase();
 
-  const receipts = await ReceiptModel.find({
-    ...period.query,
-    "items.isKanike": true,
-  }).sort({ businessDate: 1, receiptNo: 1 });
+  const [receipts, sevas] = await Promise.all([
+    ReceiptModel.find({
+      ...period.query,
+    }).sort({ businessDate: 1, receiptNo: 1 }),
+    SevaModel.find().sort({ order: 1, createdAt: 1 }),
+  ]);
 
-  const report = buildKanikeThermalReport(receipts);
+  const sevaOrder = new Map(sevas.map((seva, index) => [seva._id.toString(), index]));
+
+  const report = buildKanikeThermalReport(receipts, sevaOrder);
   return Response.json(report);
 }
