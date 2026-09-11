@@ -8,15 +8,19 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { HistoryReportDialog } from "@/components/history-report-dialog";
+import { KanikeThermalReportDialog } from "@/components/kanike-thermal-report-dialog";
 import { shiftBusinessDate } from "@/lib/date";
+import type { TempleHeaderDTO } from "@/lib/dto";
 
 export function HistoryShell({
   date,
   today,
+  templeSettings,
   children,
 }: {
   date: string;
   today: string;
+  templeSettings: TempleHeaderDTO;
   children: React.ReactNode;
 }) {
   const router = useRouter();
@@ -41,6 +45,7 @@ export function HistoryShell({
         <div className="flex items-center gap-2">
           <HistoryReportDialog today={today} format="pdf" triggerLabel="PDF" />
           <HistoryReportDialog today={today} format="xlsx" triggerLabel="Excel" />
+          <KanikeThermalReportDialog today={today} templeSettings={templeSettings} />
         </div>
       </div>
 
