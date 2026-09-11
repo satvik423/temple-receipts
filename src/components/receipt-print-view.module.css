@@ -80,6 +80,12 @@
   font-weight: bold;
 }
 
+.groupDate {
+  margin: 6px 0 2px;
+  font-weight: bold;
+  text-decoration: underline;
+}
+
 @media print {
   @page {
     size: 80mm auto;

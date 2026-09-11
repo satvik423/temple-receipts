@@ -1,6 +1,7 @@
 import { formatCurrency } from "@/lib/format";
-import { formatReceiptDate, formatReceiptTime } from "@/lib/date";
+import { formatBusinessDate, formatReceiptDate, formatReceiptTime } from "@/lib/date";
 import type { ReceiptDTO, TempleHeaderDTO } from "@/lib/dto";
+import type { KanikeThermalReport } from "@/lib/kanike-thermal-report";
 
 export class PrinterNotConnectedError extends Error {
   constructor() {
@@ -354,6 +355,131 @@ export async function printReceiptToUsb(
   }
 
   const canvas = await renderReceiptCanvas(receipt, templeSettings, isCopy);
+  const data = canvasToEscPosRaster(canvas);
+  await sendToPrinter(device, data);
+}
+
+const KANIKE_TOTAL_COL_WIDTH = 140;
+
+async function renderKanikeReportCanvas(
+  report: KanikeThermalReport,
+  templeSettings: TempleHeaderDTO,
+  generatedAt: Date,
+): Promise<HTMLCanvasElement> {
+  const width = PRINTER_WIDTH_DOTS;
+  const contentWidth = width - PAD * 2;
+  const nameColWidth = contentWidth - KANIKE_TOTAL_COL_WIDTH - 8;
+
+  try {
+    await Promise.all([
+      document.fonts.load('400 16px "Noto Sans Kannada"'),
+      document.fonts.load('700 16px "Noto Sans Kannada"'),
+    ]);
+  } catch (err) {
+    console.warn("Could not load Noto Sans Kannada for printing:", err);
+  }
+
+  // Thermal paper is a continuous roll, so size the scratch canvas generously up front
+  // (rather than the receipt's fixed 3000px) since a month/range report can run long.
+  const estimatedRows = report.groups.reduce((sum, group) => sum + group.items.length + 3, 0);
+  const scratchHeight = Math.max(3000, 300 + estimatedRows * 60);
+
+  const scratch = document.createElement("canvas");
+  scratch.width = width;
+  scratch.height = scratchHeight;
+  const ctx = scratch.getContext("2d")!;
+  ctx.fillStyle = "#fff";
+  ctx.fillRect(0, 0, scratch.width, scratch.height);
+
+  let y = 36;
+
+  function centerText(text: string, size = FONT_NORMAL) {
+    setFont(ctx, size);
+    ctx.textAlign = "center";
+    const lines = wrapText(ctx, text, contentWidth);
+    for (const line of lines) {
+      ctx.fillText(line, width / 2, y);
+      y += LINE_H;
+    }
+  }
+
+  function dashedLine() {
+    y += 26;
+  }
+
+  function solidLine() {
+    y += 20;
+  }
+
+  function row2(name: string, total: string, size = FONT_NORMAL) {
+    setFont(ctx, size);
+    const lines = wrapText(ctx, name, nameColWidth);
+    const lineHeight = size === FONT_TOTAL ? LINE_H + 6 : LINE_H;
+    lines.forEach((line, index) => {
+      setFont(ctx, size);
+      ctx.textAlign = "left";
+      ctx.fillText(line, PAD, y);
+      if (index === 0) {
+        ctx.textAlign = "right";
+        ctx.fillText(total, width - PAD, y);
+      }
+      y += lineHeight;
+    });
+  }
+
+  centerText(`${templeSettings.name},`);
+  centerText(templeSettings.place);
+  centerText(`Mob: ${templeSettings.phone}`);
+  dashedLine();
+  centerText(`${formatReceiptDate(generatedAt)} ${formatReceiptTime(generatedAt)}`, FONT_SMALL);
+  dashedLine();
+  row2("ITEM", "TOTAL");
+  solidLine();
+
+  for (const group of report.groups) {
+    setFont(ctx, FONT_SMALL, false);
+    ctx.textAlign = "left";
+    const dateLines = wrapText(ctx, formatBusinessDate(group.businessDate), contentWidth);
+    dateLines.forEach((line) => {
+      setFont(ctx, FONT_SMALL, false);
+      ctx.fillText(line, PAD, y);
+      y += LINE_H_SMALL;
+    });
+
+    for (const item of group.items) {
+      row2(item.name, formatCurrency(item.total));
+    }
+
+    row2("TOTAL", formatCurrency(group.dayTotal));
+    y += 10;
+  }
+
+  dashedLine();
+  row2("GRAND TOTAL", formatCurrency(report.grandTotal), FONT_TOTAL);
+
+  y += 40;
+
+  const finalCanvas = document.createElement("canvas");
+  finalCanvas.width = width;
+  finalCanvas.height = Math.ceil(y);
+  const finalCtx = finalCanvas.getContext("2d")!;
+  finalCtx.fillStyle = "#fff";
+  finalCtx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
+  finalCtx.drawImage(scratch, 0, 0);
+  return finalCanvas;
+}
+
+export async function printKanikeReportToUsb(
+  report: KanikeThermalReport,
+  templeSettings: TempleHeaderDTO,
+  generatedAt: Date,
+): Promise<void> {
+  const device = await getAuthorizedPrinter();
+  if (!device) {
+    throw new PrinterNotConnectedError();
+  }
+
+  const canvas = await renderKanikeReportCanvas(report, templeSettings, generatedAt);
   const data = canvasToEscPosRaster(canvas);
   await sendToPrinter(device, data);
 }

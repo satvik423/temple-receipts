@@ -1,9 +1,11 @@
 import mongoose from "mongoose";
 import { NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/auth";
 import { connectToDatabase } from "@/lib/mongodb";
 import { SevaModel } from "@/models/Seva";
 
 export async function PATCH(request: Request) {
+  await requireAdmin();
   const body = await request.json().catch(() => null);
   const ids = Array.isArray(body?.ids) ? body.ids : null;
 

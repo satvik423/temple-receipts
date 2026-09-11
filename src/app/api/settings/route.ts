@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/auth";
 import { connectToDatabase } from "@/lib/mongodb";
 import { SettingsModel, SETTINGS_DOC_ID } from "@/models/Settings";
 
 export async function PATCH(request: Request) {
+  await requireAdmin();
   const body = await request.json().catch(() => null);
   const name = typeof body?.name === "string" ? body.name.trim() : "";
   const place = typeof body?.place === "string" ? body.place.trim() : "";

@@ -1,15 +1,18 @@
 import { NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/auth";
 import { connectToDatabase } from "@/lib/mongodb";
 import { SevaModel } from "@/models/Seva";
 import { toSevaDTO } from "@/lib/dto";
 
 export async function GET() {
+  await requireAdmin();
   await connectToDatabase();
   const sevas = await SevaModel.find().sort({ order: 1, createdAt: 1 });
   return NextResponse.json(sevas.map(toSevaDTO));
 }
 
 export async function POST(request: Request) {
+  await requireAdmin();
   const body = await request.json().catch(() => null);
   const name = typeof body?.name === "string" ? body.name.trim() : "";
   const rawNameEn = typeof body?.nameEn === "string" ? body.nameEn.trim() : "";
