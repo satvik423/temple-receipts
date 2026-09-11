@@ -3,6 +3,7 @@ import { displaySevaName } from "@/lib/dto";
 
 export type KanikeThermalItem = { name: string; qty: number; total: number };
 export type KanikeThermalReport = {
+  periodLabel: string;
   items: KanikeThermalItem[];
   grandTotal: number;
 };
@@ -10,6 +11,7 @@ export type KanikeThermalReport = {
 export function buildKanikeThermalReport(
   receipts: Receipt[],
   sevaOrder: Map<string, number>,
+  periodLabel: string,
 ): KanikeThermalReport {
   const byId = new Map<string, KanikeThermalItem>();
   let grandTotal = 0;
@@ -36,5 +38,5 @@ export function buildKanikeThermalReport(
     })
     .map(([, item]) => item);
 
-  return { items, grandTotal };
+  return { periodLabel, items, grandTotal };
 }

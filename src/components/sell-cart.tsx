@@ -198,16 +198,16 @@ export function SellCart({
 
   return (
     <div className="space-y-4 pb-24 lg:pb-0">
-      {!printerConnected ? (
-        <Card className="border-destructive/50 print:hidden">
-          <CardContent className="flex flex-wrap items-center justify-between gap-3 pt-6">
-            <p className="text-sm text-muted-foreground">
-              No printer connected — bills will be saved but won&apos;t print until you connect one.
-            </p>
-            <PrinterConnectButton onConnected={() => setPrinterConnected(true)} />
-          </CardContent>
-        </Card>
-      ) : null}
+      <Card className={`print:hidden ${printerConnected ? "" : "border-destructive/50"}`}>
+        <CardContent className="flex flex-wrap items-center justify-between gap-3 pt-6">
+          <p className="text-sm text-muted-foreground">
+            {printerConnected
+              ? "Thermal printer connected."
+              : "No printer connected — bills will be saved but won't print until you connect one."}
+          </p>
+          <PrinterConnectButton onConnected={() => setPrinterConnected(true)} />
+        </CardContent>
+      </Card>
 
       <div className="lg:grid lg:grid-cols-[1fr_360px] lg:gap-4">
         <Card className="hidden print:hidden lg:block">

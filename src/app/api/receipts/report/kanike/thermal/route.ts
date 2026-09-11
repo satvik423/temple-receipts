@@ -24,6 +24,6 @@ export async function GET(request: Request) {
 
   const sevaOrder = new Map(sevas.map((seva, index) => [seva._id.toString(), index]));
 
-  const report = buildKanikeThermalReport(receipts, sevaOrder);
+  const report = buildKanikeThermalReport(receipts, sevaOrder, period.title);
   return Response.json(report);
 }

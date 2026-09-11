@@ -53,7 +53,7 @@ export function PrinterConnectButton({
     <div className={`flex items-center gap-2 ${className ?? ""}`}>
       <Button type="button" variant="outline" onClick={handleConnect}>
         <Usb className="size-4" />
-        {deviceName ? "Reconnect Printer" : "Connect Printer"}
+        {deviceName ? "Change Printer" : "Connect Printer"}
       </Button>
       <span className="text-sm text-muted-foreground">
         {deviceName ? `Connected: ${deviceName}` : "No printer connected"}
