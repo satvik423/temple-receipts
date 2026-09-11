@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/auth";
 import { connectToDatabase } from "@/lib/mongodb";
 import { SevaModel } from "@/models/Seva";
 import { toSevaDTO } from "@/lib/dto";
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  await requireAdmin();
   const { id } = await params;
   const body = await request.json().catch(() => null);
 
@@ -62,6 +64,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 }
 
 export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {
+  await requireAdmin();
   const { id } = await params;
 
   await connectToDatabase();

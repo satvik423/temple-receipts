@@ -1,3 +1,4 @@
+import { requireAdmin } from "@/lib/auth";
 import { connectToDatabase } from "@/lib/mongodb";
 import { ReceiptModel } from "@/models/Receipt";
 import { getOrCreateSettings } from "@/lib/settings";
@@ -19,6 +20,7 @@ export const maxDuration = 60;
 type SevaTotal = { sevaName: string; sevaNameEn: string | null; qty: number; amount: number };
 
 export async function GET(request: Request) {
+  await requireAdmin();
   const { searchParams } = new URL(request.url);
   const period = resolveReportPeriod(searchParams);
   if ("error" in period) {

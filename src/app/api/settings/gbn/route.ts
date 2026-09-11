@@ -1,16 +1,19 @@
 import { NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/auth";
 import { connectToDatabase } from "@/lib/mongodb";
 import { getSequenceValue, setSequenceValue } from "@/models/Counter";
 
 const GBN_COUNTER_NAME = "receiptNo";
 
 export async function GET() {
+  await requireAdmin();
   await connectToDatabase();
   const current = await getSequenceValue(GBN_COUNTER_NAME);
   return NextResponse.json({ current });
 }
 
 export async function PATCH(request: Request) {
+  await requireAdmin();
   const body = await request.json().catch(() => null);
   const nextGbn = Number(body?.nextGbn);
 

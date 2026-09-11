@@ -1,9 +1,11 @@
+import { requireAdmin } from "@/lib/auth";
 import { connectToDatabase } from "@/lib/mongodb";
 import { ReceiptModel } from "@/models/Receipt";
 import { resolveReportPeriod } from "@/lib/report-period";
 import { buildKanikeThermalReport } from "@/lib/kanike-thermal-report";
 
 export async function GET(request: Request) {
+  await requireAdmin();
   const { searchParams } = new URL(request.url);
   const period = resolveReportPeriod(searchParams);
   if ("error" in period) {
