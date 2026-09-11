@@ -101,7 +101,6 @@ export type KanikeRowDTO = {
   createdAt: string;
   sevaId: string;
   sevaName: string;
-  unitPrice: number;
   amount: number;
   bhaktaName?: string;
   bhaktaPhone?: string;
@@ -122,7 +121,6 @@ export function toKanikeRowDTO(receipt: Receipt): KanikeRowDTO | null {
     createdAt: receipt.createdAt.toISOString(),
     sevaId: item.sevaId.toString(),
     sevaName: displaySevaName(item),
-    unitPrice: item.unitPrice,
     amount: item.amount,
     bhaktaName: item.bhaktaName ?? undefined,
     bhaktaPhone: item.bhaktaPhone ?? undefined,

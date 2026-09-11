@@ -359,7 +359,6 @@ export async function printReceiptToUsb(
   await sendToPrinter(device, data);
 }
 
-const KANIKE_PRICE_COL_WIDTH = 110;
 const KANIKE_TOTAL_COL_WIDTH = 140;
 
 async function renderKanikeReportCanvas(
@@ -369,7 +368,7 @@ async function renderKanikeReportCanvas(
 ): Promise<HTMLCanvasElement> {
   const width = PRINTER_WIDTH_DOTS;
   const contentWidth = width - PAD * 2;
-  const nameColWidth = contentWidth - KANIKE_PRICE_COL_WIDTH - KANIKE_TOTAL_COL_WIDTH - 16;
+  const nameColWidth = contentWidth - KANIKE_TOTAL_COL_WIDTH - 8;
 
   try {
     await Promise.all([
@@ -412,7 +411,7 @@ async function renderKanikeReportCanvas(
     y += 20;
   }
 
-  function row3(name: string, price: string, total: string, size = FONT_NORMAL) {
+  function row2(name: string, total: string, size = FONT_NORMAL) {
     setFont(ctx, size);
     const lines = wrapText(ctx, name, nameColWidth);
     const lineHeight = size === FONT_TOTAL ? LINE_H + 6 : LINE_H;
@@ -422,7 +421,6 @@ async function renderKanikeReportCanvas(
       ctx.fillText(line, PAD, y);
       if (index === 0) {
         ctx.textAlign = "right";
-        ctx.fillText(price, PAD + nameColWidth + KANIKE_PRICE_COL_WIDTH, y);
         ctx.fillText(total, width - PAD, y);
       }
       y += lineHeight;
@@ -435,7 +433,7 @@ async function renderKanikeReportCanvas(
   dashedLine();
   centerText(`${formatReceiptDate(generatedAt)} ${formatReceiptTime(generatedAt)}`, FONT_SMALL);
   dashedLine();
-  row3("ITEM", "PRICE", "TOTAL");
+  row2("ITEM", "TOTAL");
   solidLine();
 
   for (const group of report.groups) {
@@ -449,15 +447,15 @@ async function renderKanikeReportCanvas(
     });
 
     for (const item of group.items) {
-      row3(item.name, formatCurrency(item.price), formatCurrency(item.total));
+      row2(item.name, formatCurrency(item.total));
     }
 
-    row3("TOTAL", "", formatCurrency(group.dayTotal));
+    row2("TOTAL", formatCurrency(group.dayTotal));
     y += 10;
   }
 
   dashedLine();
-  row3("GRAND TOTAL", "", formatCurrency(report.grandTotal), FONT_TOTAL);
+  row2("GRAND TOTAL", formatCurrency(report.grandTotal), FONT_TOTAL);
 
   y += 40;
 

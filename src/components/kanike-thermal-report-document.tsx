@@ -33,7 +33,6 @@ export function KanikeThermalReportDocument({
 
       <div className={`${styles.row} ${styles.tableHeader}`}>
         <span className={styles.item}>ITEM</span>
-        <span className={styles.amount}>PRICE</span>
         <span className={styles.amount}>TOTAL</span>
       </div>
 
@@ -46,14 +45,12 @@ export function KanikeThermalReportDocument({
           {group.items.map((item) => (
             <div key={item.name} className={styles.row}>
               <span className={`${styles.item} ${styles.itemName}`}>{item.name}</span>
-              <span className={styles.amount}>{formatCurrency(item.price)}</span>
               <span className={styles.amount}>{formatCurrency(item.total)}</span>
             </div>
           ))}
 
           <div className={`${styles.row} ${styles.total}`}>
             <span className={styles.item}>TOTAL</span>
-            <span className={styles.amount} />
             <span className={styles.amount}>{formatCurrency(group.dayTotal)}</span>
           </div>
         </div>
@@ -63,7 +60,6 @@ export function KanikeThermalReportDocument({
 
       <div className={`${styles.row} ${styles.total}`}>
         <span className={styles.item}>GRAND TOTAL</span>
-        <span className={styles.amount} />
         <span className={styles.amount}>{formatCurrency(report.grandTotal)}</span>
       </div>
     </div>

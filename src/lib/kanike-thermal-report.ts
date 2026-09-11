@@ -2,7 +2,7 @@ import type { Receipt } from "@/models/Receipt";
 import { toKanikeRowDTO, type KanikeRowDTO } from "@/lib/dto";
 import { groupReceiptsByDate } from "@/lib/report-period";
 
-export type KanikeThermalItem = { name: string; price: number; total: number };
+export type KanikeThermalItem = { name: string; total: number };
 export type KanikeThermalGroup = {
   businessDate: string;
   items: KanikeThermalItem[];
@@ -30,7 +30,7 @@ export function buildKanikeThermalReport(receipts: Receipt[]): KanikeThermalRepo
       if (existing) {
         existing.total += row.amount;
       } else {
-        byName.set(row.sevaName, { name: row.sevaName, price: row.unitPrice, total: row.amount });
+        byName.set(row.sevaName, { name: row.sevaName, total: row.amount });
       }
     }
 

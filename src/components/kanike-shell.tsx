@@ -164,7 +164,6 @@ export function KanikeShell({
         createdAt: data.createdAt,
         sevaId: item.sevaId,
         sevaName: displaySevaName(item),
-        unitPrice: item.unitPrice,
         amount: item.amount,
         bhaktaName: item.bhaktaName,
         bhaktaPhone: item.bhaktaPhone,
