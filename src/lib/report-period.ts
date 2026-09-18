@@ -1,5 +1,5 @@
 import { MONTH_NAMES, formatBusinessDate } from "@/lib/date";
-import type { Receipt } from "@/models/Receipt";
+import { ACTIVE_RECEIPT_FILTER, type Receipt } from "@/models/Receipt";
 
 export type ReportPeriod = {
   query: Record<string, unknown>;
@@ -40,14 +40,14 @@ export function resolveReportPeriod(
       return { error: "'from' must be on or before 'to'" };
     }
     return {
-      query: { businessDate: { $gte: from, $lte: to } },
+      query: { businessDate: { $gte: from, $lte: to }, ...ACTIVE_RECEIPT_FILTER },
       title: `${formatBusinessDate(from)} to ${formatBusinessDate(to)}`,
       filenameSuffix: `${from}-to-${to}`,
     };
   }
 
   if (type === "full") {
-    return { query: {}, title: "Full Report", filenameSuffix: "full" };
+    return { query: { ...ACTIVE_RECEIPT_FILTER }, title: "Full Report", filenameSuffix: "full" };
   }
 
   const now = new Date();
@@ -63,7 +63,7 @@ export function resolveReportPeriod(
   const to = `${year}-${mm}-${String(daysInMonth(year, month)).padStart(2, "0")}`;
 
   return {
-    query: { businessDate: { $gte: from, $lte: to } },
+    query: { businessDate: { $gte: from, $lte: to }, ...ACTIVE_RECEIPT_FILTER },
     title: `${MONTH_NAMES[month - 1]} month - ${year}`,
     filenameSuffix: `${year}-${mm}`,
   };

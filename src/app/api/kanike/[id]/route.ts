@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth";
 import { connectToDatabase } from "@/lib/mongodb";
-import { ReceiptModel } from "@/models/Receipt";
+import { ACTIVE_RECEIPT_FILTER, ReceiptModel } from "@/models/Receipt";
 import { SevaModel } from "@/models/Seva";
 import { getNextSequence } from "@/models/Counter";
 import { toReceiptDTO } from "@/lib/dto";
@@ -16,7 +16,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const body = await request.json().catch(() => null);
 
   await connectToDatabase();
-  const receipt = await ReceiptModel.findById(id);
+  const receipt = await ReceiptModel.findOne({ _id: id, ...ACTIVE_RECEIPT_FILTER });
 
   if (!receipt) {
     return NextResponse.json({ error: "Receipt not found" }, { status: 404 });

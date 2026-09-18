@@ -1,5 +1,5 @@
 import { connectToDatabase } from "@/lib/mongodb";
-import { ReceiptModel } from "@/models/Receipt";
+import { ACTIVE_RECEIPT_FILTER, ReceiptModel } from "@/models/Receipt";
 import { toKanikeRowDTO, type KanikeRowDTO, type SevaDTO } from "@/lib/dto";
 import { getOrCreateSettings } from "@/lib/settings";
 import { KanikeTable } from "@/components/kanike-table";
@@ -8,7 +8,11 @@ export async function KanikeData({ date, kanikeTypes }: { date: string; kanikeTy
   await connectToDatabase();
 
   const [receipts, settings] = await Promise.all([
-    ReceiptModel.find({ businessDate: date, "items.isKanike": true }).sort({ receiptNo: -1 }),
+    ReceiptModel.find({
+      businessDate: date,
+      "items.isKanike": true,
+      ...ACTIVE_RECEIPT_FILTER,
+    }).sort({ receiptNo: -1 }),
     getOrCreateSettings(),
   ]);
 

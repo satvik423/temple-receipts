@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { getCurrentUser } from "@/lib/auth";
 import { getBusinessDate } from "@/lib/date";
 import { getOrCreateSettings } from "@/lib/settings";
 import { HistoryShell } from "@/components/history-shell";
@@ -17,7 +18,8 @@ export default async function HistoryPage({
   const params = await searchParams;
   const today = getBusinessDate();
   const date = params.date && BUSINESS_DATE_PATTERN.test(params.date) ? params.date : today;
-  const settings = await getOrCreateSettings();
+  const [settings, currentUser] = await Promise.all([getOrCreateSettings(), getCurrentUser()]);
+  const isAdmin = currentUser?.role === "admin";
 
   return (
     <HistoryShell
@@ -26,7 +28,7 @@ export default async function HistoryPage({
       templeSettings={{ name: settings.name, place: settings.place, phone: settings.phone }}
     >
       <Suspense key={date} fallback={<TableSkeleton />}>
-        <HistoryData date={date} />
+        <HistoryData date={date} isAdmin={isAdmin} />
       </Suspense>
     </HistoryShell>
   );

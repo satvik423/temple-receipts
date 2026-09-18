@@ -2,10 +2,22 @@
 
 import * as React from "react";
 import { createPortal } from "react-dom";
-import { Printer } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Printer, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { CardTitle } from "@/components/ui/card";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   Table,
   TableBody,
@@ -25,13 +37,18 @@ export function HistoryTable({
   receipts,
   totalAmount,
   templeSettings,
+  isAdmin,
 }: {
   receipts: ReceiptDTO[];
   totalAmount: number;
   templeSettings: TempleHeaderDTO;
+  isAdmin: boolean;
 }) {
+  const router = useRouter();
   const [reprintingId, setReprintingId] = React.useState<string | null>(null);
   const [browserPrintReceipt, setBrowserPrintReceipt] = React.useState<ReceiptDTO | null>(null);
+  const [deletingReceipt, setDeletingReceipt] = React.useState<ReceiptDTO | null>(null);
+  const [deleting, setDeleting] = React.useState(false);
 
   React.useEffect(() => {
     if (!browserPrintReceipt) return;
@@ -72,6 +89,23 @@ export function HistoryTable({
       setBrowserPrintReceipt(receipt);
     } finally {
       setReprintingId(null);
+    }
+  }
+
+  async function handleDelete() {
+    if (!deletingReceipt) return;
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/receipts/${deletingReceipt.id}`, { method: "DELETE" });
+      if (!res.ok) {
+        toast.error("Could not delete receipt");
+        return;
+      }
+      toast.success("Receipt deleted");
+      setDeletingReceipt(null);
+      router.refresh();
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -122,6 +156,17 @@ export function HistoryTable({
                       >
                         <Printer className="size-4" />
                       </Button>
+                      {isAdmin ? (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          aria-label={`Delete receipt ${receipt.receiptNo}`}
+                          className="text-muted-foreground hover:text-destructive"
+                          onClick={() => setDeletingReceipt(receipt)}
+                        >
+                          <Trash2 className="size-4" />
+                        </Button>
+                      ) : null}
                     </TableCell>
                   </TableRow>
                 );
@@ -139,6 +184,34 @@ export function HistoryTable({
             document.body,
           )
         : null}
+
+      <AlertDialog
+        open={deletingReceipt !== null}
+        onOpenChange={(open) => !open && setDeletingReceipt(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete receipt #{deletingReceipt?.receiptNo}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This removes it from history, reports, and calculations. It isn&apos;t permanently
+              erased, but it can&apos;t be undone from this screen.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              disabled={deleting}
+              onClick={(e) => {
+                e.preventDefault();
+                handleDelete();
+              }}
+            >
+              {deleting ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

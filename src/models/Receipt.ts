@@ -26,6 +26,7 @@ const ReceiptSchema = new Schema(
     businessDate: { type: String, required: true, index: true },
     items: { type: [ReceiptItemSchema], required: true },
     total: { type: Number, required: true, min: 0 },
+    active: { type: Boolean, default: true },
     // Mongoose marks `timestamps: true`'s createdAt immutable by default; declare
     // it explicitly (mutable) so a Kanike entry's date can be corrected after the fact.
     createdAt: { type: Date, immutable: false },
@@ -40,3 +41,8 @@ export type Receipt = InferSchemaType<typeof ReceiptSchema> & {
 export const ReceiptModel =
   (mongoose.models.Receipt as mongoose.Model<Receipt>) ??
   mongoose.model<Receipt>("Receipt", ReceiptSchema);
+
+// Pre-existing receipts have no `active` field at all, so `$ne: false` (not
+// `active: true`) is required to treat "field absent" as active without a
+// backfill migration.
+export const ACTIVE_RECEIPT_FILTER = { active: { $ne: false } } as const;
