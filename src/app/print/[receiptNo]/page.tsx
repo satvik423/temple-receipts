@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { connectToDatabase } from "@/lib/mongodb";
-import { ReceiptModel } from "@/models/Receipt";
+import { ACTIVE_RECEIPT_FILTER, ReceiptModel } from "@/models/Receipt";
 import { toReceiptDTO } from "@/lib/dto";
 import { getOrCreateSettings } from "@/lib/settings";
 import { ReceiptPrintView } from "@/components/receipt-print-view";
@@ -21,7 +21,7 @@ export default async function PrintReceiptPage({
 
   await connectToDatabase();
   const [receipt, settings] = await Promise.all([
-    ReceiptModel.findOne({ receiptNo: receiptNoNum }),
+    ReceiptModel.findOne({ receiptNo: receiptNoNum, ...ACTIVE_RECEIPT_FILTER }),
     getOrCreateSettings(),
   ]);
 

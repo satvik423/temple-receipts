@@ -1,4 +1,4 @@
-import { ReceiptModel } from "@/models/Receipt";
+import { ACTIVE_RECEIPT_FILTER, ReceiptModel } from "@/models/Receipt";
 import { getBusinessDate } from "@/lib/date";
 import { RANGE_LABELS, REVENUE_RANGES, type RevenueRange } from "@/lib/analytics-shared";
 
@@ -70,7 +70,7 @@ async function getDailyTotals(
   endDate: string,
 ): Promise<Map<string, number>> {
   const rows = await ReceiptModel.aggregate([
-    { $match: { businessDate: { $gte: startDate, $lte: endDate } } },
+    { $match: { businessDate: { $gte: startDate, $lte: endDate }, ...ACTIVE_RECEIPT_FILTER } },
     { $group: { _id: "$businessDate", total: { $sum: "$total" } } },
   ]);
   return new Map(rows.map((row) => [row._id as string, row.total as number]));
@@ -188,7 +188,7 @@ export async function getSevaBreakdown(
   endDate: string,
 ): Promise<SevaBreakdownEntry[]> {
   const rows = await ReceiptModel.aggregate([
-    { $match: { businessDate: { $gte: startDate, $lte: endDate } } },
+    { $match: { businessDate: { $gte: startDate, $lte: endDate }, ...ACTIVE_RECEIPT_FILTER } },
     { $unwind: "$items" },
     {
       $group: {
@@ -204,7 +204,7 @@ export async function getSevaBreakdown(
 
 async function aggregatePeriod(start: string, end: string): Promise<{ total: number; count: number }> {
   const rows = await ReceiptModel.aggregate([
-    { $match: { businessDate: { $gte: start, $lte: end } } },
+    { $match: { businessDate: { $gte: start, $lte: end }, ...ACTIVE_RECEIPT_FILTER } },
     { $group: { _id: null, total: { $sum: "$total" }, count: { $sum: 1 } } },
   ]);
   return { total: rows[0]?.total ?? 0, count: rows[0]?.count ?? 0 };
