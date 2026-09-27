@@ -193,8 +193,8 @@ export function HistoryTable({
           <AlertDialogHeader>
             <AlertDialogTitle>Delete receipt #{deletingReceipt?.receiptNo}?</AlertDialogTitle>
             <AlertDialogDescription>
-              This removes it from history, reports, and calculations. It isn&apos;t permanently
-              erased, but it can&apos;t be undone from this screen.
+              This permanently deletes the receipt. Its GBN and any same-day bills after it will
+              be renumbered to close the gap. This cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

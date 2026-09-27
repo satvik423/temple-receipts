@@ -1,4 +1,4 @@
-import mongoose, { Schema, type InferSchemaType } from "mongoose";
+import mongoose, { Schema, type ClientSession, type InferSchemaType } from "mongoose";
 
 const CounterSchema = new Schema({
   _id: { type: String, required: true },
@@ -25,11 +25,15 @@ export async function getSequenceValue(name: string): Promise<number> {
   return doc?.seq ?? 0;
 }
 
-export async function setSequenceValue(name: string, value: number): Promise<number> {
+export async function setSequenceValue(
+  name: string,
+  value: number,
+  options?: { session?: ClientSession },
+): Promise<number> {
   const result = await CounterModel.findByIdAndUpdate(
     name,
     { $set: { seq: value } },
-    { returnDocument: "after", upsert: true },
+    { returnDocument: "after", upsert: true, session: options?.session },
   );
   return result.seq;
 }

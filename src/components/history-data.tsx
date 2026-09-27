@@ -1,5 +1,5 @@
 import { connectToDatabase } from "@/lib/mongodb";
-import { ACTIVE_RECEIPT_FILTER, ReceiptModel } from "@/models/Receipt";
+import { ReceiptModel } from "@/models/Receipt";
 import { toReceiptDTO } from "@/lib/dto";
 import { getOrCreateSettings } from "@/lib/settings";
 import { HistoryTable } from "@/components/history-table";
@@ -7,7 +7,7 @@ import { HistoryTable } from "@/components/history-table";
 export async function HistoryData({ date, isAdmin }: { date: string; isAdmin: boolean }) {
   await connectToDatabase();
 
-  const query = { businessDate: date, ...ACTIVE_RECEIPT_FILTER };
+  const query = { businessDate: date };
 
   const [receipts, totalAmountResult, settings] = await Promise.all([
     ReceiptModel.find(query).sort({ receiptNo: -1 }),
