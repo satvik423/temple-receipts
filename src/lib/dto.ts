@@ -64,7 +64,6 @@ export type ReceiptDTO = {
   businessDate: string;
   items: ReceiptItemDTO[];
   total: number;
-  active: boolean;
   createdAt: string;
 };
 
@@ -90,7 +89,6 @@ export function toReceiptDTO(receipt: Receipt): ReceiptDTO {
       isOnlinePay: item.isOnlinePay ?? false,
     })),
     total: receipt.total,
-    active: receipt.active ?? true,
     createdAt: receipt.createdAt.toISOString(),
   };
 }

@@ -9,7 +9,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { GbnSettingsForm } from "@/components/gbn-settings-form";
-import { RestoreReceiptForm } from "@/components/restore-receipt-form";
 import { UsersSection } from "@/components/users-section";
 import { PrinterConnectButton } from "@/components/printer-connect-button";
 
@@ -149,8 +148,6 @@ export function SettingsForm({
       </Card>
 
       <GbnSettingsForm currentGbn={currentGbn} />
-
-      <RestoreReceiptForm />
 
       <Card>
         <CardHeader>
