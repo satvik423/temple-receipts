@@ -7,7 +7,8 @@ import { HistoryTable } from "@/components/history-table";
 export async function HistoryData({ date, isAdmin }: { date: string; isAdmin: boolean }) {
   await connectToDatabase();
 
-  const query = { businessDate: date };
+  // Seva history excludes kanike entries; those live in the Kanike tab.
+  const query = { businessDate: date, "items.isKanike": { $ne: true } };
 
   const [receipts, totalAmountResult, settings] = await Promise.all([
     ReceiptModel.find(query).sort({ receiptNo: -1 }),

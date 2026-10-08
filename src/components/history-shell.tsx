@@ -7,19 +7,24 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { HistoryReportDialog } from "@/components/history-report-dialog";
 import { KanikeThermalReportDialog } from "@/components/kanike-thermal-report-dialog";
 import { shiftBusinessDate } from "@/lib/date";
 import type { TempleHeaderDTO } from "@/lib/dto";
 
+export type HistoryTab = "seva" | "kanike";
+
 export function HistoryShell({
   date,
   today,
+  tab,
   templeSettings,
   children,
 }: {
   date: string;
   today: string;
+  tab: HistoryTab;
   templeSettings: TempleHeaderDTO;
   children: React.ReactNode;
 }) {
@@ -38,19 +43,36 @@ export function HistoryShell({
     router.push(query ? `${pathname}?${query}` : pathname);
   }
 
+  function setTab(nextTab: HistoryTab) {
+    const params = new URLSearchParams(searchParams.toString());
+    if (nextTab === "kanike") {
+      params.set("tab", nextTab);
+    } else {
+      params.delete("tab");
+    }
+    const query = params.toString();
+    router.push(query ? `${pathname}?${query}` : pathname);
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3 print:hidden">
         <h1 className="text-lg font-semibold">Sales History</h1>
         <div className="flex items-center gap-2">
-          <HistoryReportDialog today={today} format="pdf" triggerLabel="PDF" />
-          <HistoryReportDialog today={today} format="xlsx" triggerLabel="Excel" />
+          <HistoryReportDialog today={today} tab={tab} format="pdf" triggerLabel="PDF" />
+          <HistoryReportDialog today={today} tab={tab} format="xlsx" triggerLabel="Excel" />
           <KanikeThermalReportDialog today={today} templeSettings={templeSettings} />
         </div>
       </div>
 
       <Card className="print:hidden">
-        <CardHeader className="flex flex-row items-center justify-end">
+        <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <Tabs value={tab} onValueChange={(value) => setTab(value as HistoryTab)}>
+            <TabsList>
+              <TabsTrigger value="seva">Seva History</TabsTrigger>
+              <TabsTrigger value="kanike">Kanike History</TabsTrigger>
+            </TabsList>
+          </Tabs>
           <div className="flex items-center gap-2">
             <Button
               variant="outline"

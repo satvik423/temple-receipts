@@ -30,7 +30,7 @@ export async function GET(request: Request) {
   await connectToDatabase();
 
   const [receipts, settings] = await Promise.all([
-    ReceiptModel.find(period.query).sort({ businessDate: 1, receiptNo: 1 }),
+    ReceiptModel.find({ ...period.query, "items.isKanike": { $ne: true } }).sort({ businessDate: 1, receiptNo: 1 }),
     getOrCreateSettings(),
   ]);
 

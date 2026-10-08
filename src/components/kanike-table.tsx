@@ -6,6 +6,7 @@ import { createPortal } from "react-dom";
 import { Pencil, Printer } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { CardTitle } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -66,8 +67,14 @@ export function KanikeTable({
     return () => window.removeEventListener("afterprint", handleAfterPrint);
   }, []);
 
+  const totalAmount = rows.reduce((sum, row) => sum + row.amount, 0);
+
   return (
     <>
+      <CardTitle className="mb-3 text-base">
+        {rows.length} {rows.length === 1 ? "Entry" : "Entries"} · {formatCurrency(totalAmount)}
+      </CardTitle>
+
       {rows.length === 0 ? (
         <p className="text-sm text-muted-foreground">No kanike sold for this date.</p>
       ) : (
@@ -143,7 +150,7 @@ export function KanikeTable({
         onOpenChange={(open) => !open && setEditingRow(null)}
         onSaved={(newBusinessDate) => {
           if (newBusinessDate !== date) {
-            router.push(`${pathname}?date=${newBusinessDate}`);
+            router.push(`${pathname}?tab=kanike&date=${newBusinessDate}`);
           } else {
             router.refresh();
           }

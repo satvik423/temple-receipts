@@ -39,6 +39,7 @@ const SUMMARY_COLUMNS: ColumnDef[] = [
   { label: "NAME", width: 36, align: "left" },
   { label: "QTY", width: 10, align: "center" },
   { label: "AMOUNT", width: 18, align: "right", numberFormat: "#,##0.00" },
+  { label: "ONLINE PAY", width: 14, align: "center" },
 ];
 
 const KANIKE_COLUMNS: ColumnDef[] = [
@@ -48,6 +49,7 @@ const KANIKE_COLUMNS: ColumnDef[] = [
   { label: "BHAKTHA DETAIL", width: 44, align: "left" },
   { label: "PAYMENT", width: 12, align: "center" },
   { label: "AMOUNT", width: 16, align: "right", numberFormat: "#,##0.00" },
+  { label: "ONLINE PAY", width: 14, align: "center" },
 ];
 
 function applyHeader(
@@ -302,7 +304,12 @@ function buildSummaryWorkbook(
 
     for (const seva of sortedSevas) {
       const row = worksheet.getRow(rowIndex);
-      const values: Array<string | number> = [displaySevaName(seva), seva.qty, seva.amount];
+      const values: Array<string | number | null> = [
+        displaySevaName(seva),
+        seva.qty,
+        seva.amount,
+        null, // ONLINE PAY: left empty to be filled in manually
+      ];
       values.forEach((value, index) => {
         const cell = row.getCell(index + 1);
         cell.value = value;
@@ -379,13 +386,14 @@ function buildKanikeWorkbook(
 
     for (const row of rows) {
       const excelRow = worksheet.getRow(rowIndex);
-      const values: Array<string | number> = [
+      const values: Array<string | number | null> = [
         row.receiptNo,
         row.dbn,
         row.sevaName,
         formatBhaktaDetail(row),
         row.isOnlinePay ? "Online" : "Cash",
         row.amount,
+        null, // ONLINE PAY: left empty to be filled in manually
       ];
       values.forEach((value, index) => {
         const cell = excelRow.getCell(index + 1);

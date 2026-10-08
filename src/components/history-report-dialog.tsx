@@ -32,10 +32,12 @@ export type ReportFormat = "pdf" | "xlsx";
 
 export function HistoryReportDialog({
   today,
+  tab,
   format,
   triggerLabel,
 }: {
   today: string;
+  tab: "seva" | "kanike";
   format: ReportFormat;
   triggerLabel: string;
 }) {
@@ -69,7 +71,9 @@ export function HistoryReportDialog({
       params.set("from", from);
       params.set("to", to);
     }
-    const endpoint = `${BASE_ENDPOINT}/${reportType}${format === "xlsx" ? "/xlsx" : ""}`;
+    // "Report" is scoped to the active history tab; "Bill" always covers every bill.
+    const reportPath = reportType === "summary" && tab === "kanike" ? "kanike" : reportType;
+    const endpoint = `${BASE_ENDPOINT}/${reportPath}${format === "xlsx" ? "/xlsx" : ""}`;
     window.open(`${endpoint}?${params.toString()}`, "_blank");
     setOpen(false);
   }
@@ -96,7 +100,9 @@ export function HistoryReportDialog({
         >
           <TabsList>
             <TabsTrigger value="bill">Bill</TabsTrigger>
-            <TabsTrigger value="summary">Report</TabsTrigger>
+            <TabsTrigger value="summary">
+              {tab === "kanike" ? "Kanike Report" : "Seva Report"}
+            </TabsTrigger>
           </TabsList>
         </Tabs>
 
