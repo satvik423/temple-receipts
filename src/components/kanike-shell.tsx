@@ -1,8 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -12,27 +11,20 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { KanikeReceiptDocument } from "@/components/kanike-receipt-document";
 import { KanikeReportDialog } from "@/components/kanike-report-dialog";
-import { shiftBusinessDate } from "@/lib/date";
 import { displaySevaName, type KanikeRowDTO, type SevaDTO, type TempleHeaderDTO } from "@/lib/dto";
 
 const LAST_TYPE_STORAGE_KEY = "kanike:lastTypeId";
 
 export function KanikeShell({
   kanikeTypes,
-  date,
   today,
   templeSettings,
-  children,
 }: {
   kanikeTypes: SevaDTO[];
-  date: string;
   today: string;
   templeSettings: TempleHeaderDTO;
-  children: React.ReactNode;
 }) {
   const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
 
   const [bhaktaName, setBhaktaName] = React.useState("");
   const [bhaktaPhone, setBhaktaPhone] = React.useState("");
@@ -98,17 +90,6 @@ export function KanikeShell({
     window.addEventListener("afterprint", handleAfterPrint);
     return () => window.removeEventListener("afterprint", handleAfterPrint);
   }, []);
-
-  function setDate(nextDate: string) {
-    const params = new URLSearchParams(searchParams.toString());
-    if (nextDate && nextDate !== today) {
-      params.set("date", nextDate);
-    } else {
-      params.delete("date");
-    }
-    const query = params.toString();
-    router.push(query ? `${pathname}?${query}` : pathname);
-  }
 
   const canSubmit =
     bhaktaName.trim().length > 0 &&
@@ -301,43 +282,6 @@ export function KanikeShell({
             {submitting ? "Saving..." : "Save & Print"}
           </Button>
         </CardContent>
-      </Card>
-
-      <Card className="print:hidden">
-        <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <CardTitle className="text-base">Kanike History</CardTitle>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="icon"
-              aria-label="Previous day"
-              onClick={() => setDate(shiftBusinessDate(date, -1))}
-            >
-              <ChevronLeft className="size-4" />
-            </Button>
-            <Input
-              type="date"
-              value={date}
-              onChange={(e) => e.target.value && setDate(e.target.value)}
-              className="w-[160px]"
-            />
-            <Button
-              variant="outline"
-              size="icon"
-              aria-label="Next day"
-              disabled={date >= today}
-              onClick={() => setDate(shiftBusinessDate(date, 1))}
-            >
-              <ChevronRight className="size-4" />
-            </Button>
-            {date !== today ? (
-              <Button variant="ghost" className="text-muted-foreground" onClick={() => setDate(today)}>
-                Today
-              </Button>
-            ) : null}
-          </div>
-        </CardHeader>
-        <CardContent>{children}</CardContent>
       </Card>
 
       {printJob ? (
