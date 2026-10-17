@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Minus, Plus, Printer, Search, Trash2, X } from "lucide-react";
+import { Minus, Plus, Search, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -37,8 +37,6 @@ export function SellCart({
   const [customSeva, setCustomSeva] = React.useState<SevaDTO | null>(null);
   const [submitting, setSubmitting] = React.useState(false);
   const [query, setQuery] = React.useState("");
-  const [printReceipt, setPrintReceipt] = React.useState<ReceiptDTO | null>(null);
-  const [printing, setPrinting] = React.useState(false);
   const [printerConnected, setPrinterConnected] = React.useState(true);
   const [browserPrintJob, setBrowserPrintJob] = React.useState<{
     receipt: ReceiptDTO;
@@ -152,14 +150,11 @@ export function SellCart({
   const total = cart.reduce((sum, line) => sum + line.amount, 0);
 
   async function printBill(receipt: ReceiptDTO, isCopy = false) {
-    setPrinting(true);
     try {
       await printReceiptToUsb(receipt, templeSettings, isCopy);
     } catch (err) {
       console.warn("USB print failed, falling back to browser print:", err);
       setBrowserPrintJob({ receipt, isCopy });
-    } finally {
-      setPrinting(false);
     }
   }
 
@@ -188,7 +183,6 @@ export function SellCart({
       }
 
       setCart([]);
-      setPrintReceipt(data);
       toast.success(`Bill #${data.receiptNo} saved`);
       await printBill(data);
     } finally {
@@ -333,20 +327,6 @@ export function SellCart({
                 </div>
               </div>
             )}
-
-            {printReceipt ? (
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full"
-                disabled={printing}
-                aria-label={`Print bill ${printReceipt.receiptNo} again`}
-                onClick={() => printBill(printReceipt)}
-              >
-                <Printer className="size-4" />
-                Print Again
-              </Button>
-            ) : null}
 
             <Button
               className="w-full"
@@ -498,18 +478,6 @@ export function SellCart({
             <p className="text-lg font-semibold">{formatCurrency(total)}</p>
           </div>
           <div className="flex items-center gap-2">
-            {printReceipt ? (
-              <Button
-                type="button"
-                variant="outline"
-                disabled={printing}
-                aria-label={`Print bill ${printReceipt.receiptNo} again`}
-                onClick={() => printBill(printReceipt)}
-              >
-                <Printer className="size-4" />
-                Print Again
-              </Button>
-            ) : null}
             <Button size="lg" disabled={cart.length === 0 || submitting} onClick={handleCheckout}>
               {submitting ? "Saving..." : "Save & Print"}
             </Button>
